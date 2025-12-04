@@ -21,7 +21,7 @@ Este repositório documenta a transição do físico para o digital:
 
 ##  Tecnologias
 
-* **Linguagem:** [HTML/CSS/JS ou React/Vue - Edite aqui]
+* **Linguagem:** [HTML/CSS/JS ou React/Vue]
 * **Armazenamento de Dados:** JSON (Estrutura de Cartas)
 * **Ferramentas:** VSCode, Gemini Copilot
 
@@ -36,4 +36,4 @@ Este repositório documenta a transição do físico para o digital:
 Este é um projeto pessoal de portfólio em desenvolvimento ativo. Sugestões sobre balanceamento e lógica de jogo são bem-vindas!
 
 ---
-*Desenvolvido por [Seu Nome]*
+*Desenvolvido por Pedro Braga e Ramon*
