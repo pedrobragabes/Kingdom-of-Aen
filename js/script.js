@@ -63,10 +63,28 @@ const cardDatabase = [
     power: 1,
     img: "assets/medic.png",
     ability: "medic"
+  },
+  // --- TIPO: WEATHER (Teste) ---
+  {
+    id: "w_frost",
+    name: "Geada Mordaz",
+    type: "weather",
+    power: 0,
+    img: "assets/frost.png",
+    ability: "weather_frost"
+  },
+  {
+    id: "w_clear",
+    name: "Luz do Dia",
+    type: "weather",
+    power: 0,
+    img: "assets/sun.png",
+    ability: "weather_clear"
   }
 ];
 
 // Game State
+let activeWeather = { frost: false, fog: false, rain: false };
 let enemyHand = [];
 let playerPassed = false;
 let enemyPassed = false;
@@ -208,9 +226,53 @@ function triggerAbility(cardElement, rowElement) {
         case 'medic':
             applyMedic(cardElement, rowElement);
             break;
+        case 'weather_frost':
+            applyWeather('frost');
+            break;
+        case 'weather_fog':
+            applyWeather('fog');
+            break;
+        case 'weather_rain':
+            applyWeather('rain');
+            break;
+        case 'weather_clear':
+            clearWeather();
+            break;
         // Future abilities can be added here
         default:
             break;
+    }
+}
+
+function applyWeather(type) {
+    activeWeather[type] = true;
+    console.log(`Clima ativado: ${type}`);
+    updateWeatherVisuals();
+    updateScore();
+}
+
+function clearWeather() {
+    activeWeather = { frost: false, fog: false, rain: false };
+    console.log("Clima limpo!");
+    updateWeatherVisuals();
+    updateScore();
+}
+
+function updateWeatherVisuals() {
+    // Remove old classes
+    document.querySelectorAll('.row').forEach(row => {
+        row.classList.remove('weather-active-frost', 'weather-active-fog', 'weather-active-rain');
+    });
+
+    // Apply new classes
+    if (activeWeather.frost) {
+        document.querySelectorAll('.row.melee').forEach(row => row.classList.add('weather-active-frost'));
+    }
+    if (activeWeather.fog) {
+        document.querySelectorAll('.row.ranged').forEach(row => row.classList.add('weather-active-fog'));
+    }
+    if (activeWeather.rain) {
+        document.querySelectorAll('.row.siege').forEach(row => row.classList.add('weather-active-rain'));
     }
 }
 
@@ -258,28 +320,8 @@ function applyMedic(cardElement, currentRow) {
 }
 
 function applyTightBond(row, name, basePower) {
-    const cardsInRow = row.querySelectorAll('.card');
-    const sameCards = [];
-    
-    // Find all cards with the same name in this row
-    cardsInRow.forEach(card => {
-        if (card.dataset.name === name) {
-            sameCards.push(card);
-        }
-    });
-
-    // If we have a pair or more, double the power of ALL of them
-    if (sameCards.length > 1) {
-        const newPower = basePower * 2;
-        sameCards.forEach(card => {
-            // Only update if not already buffed to avoid infinite loops if we were more complex
-            // But here we just set it directly
-            card.dataset.power = newPower;
-            const powerBadge = card.querySelector('.card-power');
-            powerBadge.textContent = newPower;
-            powerBadge.classList.add('buffed'); // Visual feedback
-        });
-    }
+    // Deprecated: Logic moved to updateScore() to handle dynamic weather changes
+    // Keeping function signature to avoid breaking calls, but it does nothing now.
 }
 
 function applySpy(cardElement, currentRow) {
@@ -394,24 +436,70 @@ function updateScore() {
     let totalPlayer = 0;
     let totalOpponent = 0;
 
-    // Calculate Player Rows
-    document.querySelectorAll('.row.player').forEach(row => {
-        let rowScore = 0;
-        row.querySelectorAll('.card').forEach(card => {
-            rowScore += parseInt(card.dataset.power || 0);
-        });
-        row.querySelector('.row-score').textContent = rowScore;
-        totalPlayer += rowScore;
-    });
+    const allRows = document.querySelectorAll('.row');
+    
+    allRows.forEach(row => {
+        const rowType = row.dataset.type;
+        const cards = Array.from(row.querySelectorAll('.card'));
+        
+        // 1. Check Weather
+        let isWeathered = false;
+        if (rowType === 'melee' && activeWeather.frost) isWeathered = true;
+        if (rowType === 'ranged' && activeWeather.fog) isWeathered = true;
+        if (rowType === 'siege' && activeWeather.rain) isWeathered = true;
 
-    // Calculate Opponent Rows
-    document.querySelectorAll('.row.opponent').forEach(row => {
-        let rowScore = 0;
-        row.querySelectorAll('.card').forEach(card => {
-            rowScore += parseInt(card.dataset.power || 0);
+        // 2. Check Tight Bonds
+        // Count occurrences of each name
+        const nameCounts = {};
+        cards.forEach(card => {
+            const name = card.dataset.name;
+            nameCounts[name] = (nameCounts[name] || 0) + 1;
         });
+
+        let rowScore = 0;
+
+        cards.forEach(card => {
+            let power = parseInt(card.dataset.basePower);
+            const name = card.dataset.name;
+            const ability = card.dataset.ability;
+
+            // Apply Weather
+            if (isWeathered) {
+                power = 1;
+            }
+
+            // Apply Tight Bond
+            // Only if the card HAS the tight_bond ability AND there are others
+            if (ability === 'tight_bond' && nameCounts[name] > 1) {
+                power *= 2;
+            }
+
+            // Update Visuals
+            const badge = card.querySelector('.card-power');
+            badge.textContent = power;
+            if (power > parseInt(card.dataset.basePower)) {
+                badge.classList.add('buffed');
+                badge.classList.remove('nerfed');
+            } else if (power < parseInt(card.dataset.basePower)) {
+                badge.classList.add('nerfed');
+                badge.classList.remove('buffed');
+            } else {
+                badge.classList.remove('buffed', 'nerfed');
+            }
+            
+            // Update dataset for other logic (like Scorch) to use current power
+            card.dataset.power = power;
+
+            rowScore += power;
+        });
+
         row.querySelector('.row-score').textContent = rowScore;
-        totalOpponent += rowScore;
+
+        if (row.classList.contains('player')) {
+            totalPlayer += rowScore;
+        } else {
+            totalOpponent += rowScore;
+        }
     });
 
     // Update Totals
@@ -452,16 +540,33 @@ function enemyTurn() {
     updateEnemyHandUI();
 
     // Find correct row
-    const targetRow = document.querySelector(`.row.opponent[data-type="${cardToPlay.type}"] .cards-container`);
+    let targetRow = null;
+    if (cardToPlay.type === 'weather') {
+        // Weather can be played "anywhere", but for logic we just need to trigger it.
+        // We'll just use the first opponent row as a dummy container to pass to triggerAbility if needed,
+        // but applyWeather doesn't use the row element.
+        targetRow = document.querySelector('.row.opponent'); 
+    } else {
+        targetRow = document.querySelector(`.row.opponent[data-type="${cardToPlay.type}"] .cards-container`);
+    }
+
     if (targetRow) {
         const cardElement = createCardElement(cardToPlay);
-        cardElement.draggable = false; // Enemy cards shouldn't be draggable by player
-        targetRow.appendChild(cardElement);
         
-        // Trigger Ability
-        triggerAbility(cardElement, targetRow);
-        
-        console.log(`Inimigo jogou: ${cardToPlay.name}`);
+        if (cardToPlay.type === 'weather') {
+             triggerAbility(cardElement, targetRow);
+             // Add to enemy graveyard
+             enemyGraveyard.push(cardToPlay);
+             console.log(`Inimigo jogou Clima: ${cardToPlay.name}`);
+        } else {
+            cardElement.draggable = false; // Enemy cards shouldn't be draggable by player
+            targetRow.appendChild(cardElement);
+            
+            // Trigger Ability
+            triggerAbility(cardElement, targetRow);
+            
+            console.log(`Inimigo jogou: ${cardToPlay.name}`);
+        }
     }
 
     updateScore();
@@ -587,6 +692,8 @@ function prepareNextRound() {
     playerPassed = false;
     enemyPassed = false;
     isProcessingTurn = false;
+    activeWeather = { frost: false, fog: false, rain: false };
+    updateWeatherVisuals();
 
     // 3. Reset UI Controls
     const passBtn = document.getElementById('pass-button');
@@ -660,31 +767,60 @@ function drop(e) {
     const cardType = e.dataTransfer.getData('card-type');
     const rowType = row.dataset.type;
 
-    // Validation: Card Type must match Row Type
-    if (cardType === rowType) {
+    // Validation: Card Type must match Row Type OR Card is Weather
+    if (cardType === 'weather' || cardType === rowType) {
         const card = document.querySelector(`.card[data-id="${cardId}"]`);
         if (card) {
-            // Move card to the row's card container
-            const cardsContainer = row.querySelector('.cards-container');
-            cardsContainer.appendChild(card);
-            
-            // Disable drag for played card
-            card.draggable = false;
-            card.classList.remove('dragging');
+            if (cardType === 'weather') {
+                // Trigger Ability
+                triggerAbility(card, row);
+                
+                // Move to graveyard immediately (visual discard)
+                const cardObj = {
+                    id: card.dataset.id,
+                    name: card.dataset.name,
+                    type: card.dataset.type,
+                    power: parseInt(card.dataset.basePower),
+                    ability: card.dataset.ability
+                };
+                playerGraveyard.push(cardObj);
+                
+                card.remove(); // Remove from hand/drag source
+                
+                // Update Score (Weather effect applied)
+                updateScore();
 
-            // Trigger Ability
-            triggerAbility(card, row);
+                // Trigger Enemy Turn
+                if (!enemyPassed) {
+                    isProcessingTurn = true;
+                    setTimeout(() => {
+                        enemyTurn();
+                        isProcessingTurn = false;
+                    }, 1500);
+                }
+            } else {
+                // Move card to the row's card container
+                const cardsContainer = row.querySelector('.cards-container');
+                cardsContainer.appendChild(card);
+                
+                // Disable drag for played card
+                card.draggable = false;
+                card.classList.remove('dragging');
 
-            // Update Score
-            updateScore();
+                // Trigger Ability
+                triggerAbility(card, row);
 
-            // Trigger Enemy Turn
-            if (!enemyPassed) {
-                isProcessingTurn = true;
-                setTimeout(() => {
-                    enemyTurn();
-                    isProcessingTurn = false;
-                }, 1500);
+                // Update Score
+                updateScore();
+
+                // Trigger Enemy Turn
+                if (!enemyPassed) {
+                    isProcessingTurn = true;
+                    setTimeout(() => {
+                        enemyTurn();
+                        isProcessingTurn = false;
+                    }, 1500);
+                }
             }
         }
     } else {

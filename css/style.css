@@ -89,6 +89,25 @@ body {
     border-left: 5px solid #3498db; /* Blue for Siege */
 }
 
+/* Weather Effects */
+.weather-active-frost {
+    background-color: rgba(135, 206, 250, 0.2) !important;
+    box-shadow: inset 0 0 20px rgba(135, 206, 250, 0.5);
+    border-color: #3498db;
+}
+
+.weather-active-fog {
+    background-color: rgba(189, 195, 199, 0.2) !important;
+    box-shadow: inset 0 0 20px rgba(189, 195, 199, 0.5);
+    border-color: #95a5a6;
+}
+
+.weather-active-rain {
+    background-color: rgba(41, 128, 185, 0.2) !important;
+    box-shadow: inset 0 0 20px rgba(41, 128, 185, 0.5);
+    border-color: #2980b9;
+}
+
 /* Opponent specific styling (optional, maybe darker) */
 .opponent-side .row {
     opacity: 0.9;
@@ -250,6 +269,12 @@ body {
 .card-power.buffed {
     color: #2ecc71; /* Green text for buffed power */
     border-color: #2ecc71;
+    font-weight: 900;
+}
+
+.card-power.nerfed {
+    color: #e74c3c; /* Red text for nerfed power */
+    border-color: #e74c3c;
     font-weight: 900;
 }
 
