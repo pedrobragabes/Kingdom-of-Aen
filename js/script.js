@@ -991,6 +991,27 @@ function dragStart(e) {
         return;
     }
 
+    // Decoy Validation: Check if there are valid targets
+    if (e.target.dataset.ability === 'decoy') {
+        const playerRows = document.querySelectorAll('.row.player .cards-container');
+        let hasTarget = false;
+        
+        playerRows.forEach(container => {
+            const cards = Array.from(container.querySelectorAll('.card'));
+            cards.forEach(c => {
+                if (c.dataset.isHero !== "true" && c.dataset.ability !== "decoy") {
+                    hasTarget = true;
+                }
+            });
+        });
+
+        if (!hasTarget) {
+            e.preventDefault();
+            alert("Não há unidades para recolher!");
+            return;
+        }
+    }
+
     // Store card ID and Type in dataTransfer
     e.dataTransfer.setData('text/plain', e.target.dataset.id);
     e.dataTransfer.setData('card-type', e.target.dataset.type);

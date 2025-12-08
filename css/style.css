@@ -19,6 +19,12 @@ body {
     color: var(--text-color);
     height: 100vh;
     overflow: hidden;
+    user-select: none; /* Prevent text selection */
+}
+
+img {
+    -webkit-user-drag: none; /* Prevent image dragging */
+    user-drag: none;
 }
 
 .game-container {
@@ -193,6 +199,9 @@ body {
     gap: 10px;
     align-items: center;
     overflow-x: auto;
+    overflow-y: hidden;
+    flex-wrap: nowrap;
+    padding-bottom: 5px; /* Space for scrollbar */
 }
 
 .scoreboard {
@@ -337,6 +346,7 @@ body {
     transition: transform 0.2s;
     position: relative;
     animation: drawCard 0.5s ease-out; /* Default entry for hand */
+    flex-shrink: 0; /* Prevent shrinking in hand */
 }
 
 /* When played on board, override animation */
