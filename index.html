@@ -8,85 +8,131 @@
 </head>
 <body>
 
-    <div class="game-container">
-        <!-- 1. Lado do Oponente (Topo) -->
-        <div class="opponent-side">
-            <div class="opponent-hand-info" style="position: absolute; top: 10px; right: 10px; color: #aaa; font-size: 0.9rem; background: rgba(0,0,0,0.5); padding: 5px; border-radius: 5px;">
-                Cartas na Mão do Inimigo: <span id="enemy-hand-count">0</span>
-            </div>
-            <!-- 1. Zona de Cerco Inimiga -->
-            <div class="row siege opponent" data-type="siege">
-                <div class="row-label">Siege (Opponent)</div>
-                <div class="cards-container"></div>
-                <div class="row-score">0</div>
-            </div>
-            <!-- 2. Zona de Ataque à Distância Inimiga -->
-            <div class="row ranged opponent" data-type="ranged">
-                <div class="row-label">Ranged (Opponent)</div>
-                <div class="cards-container"></div>
-                <div class="row-score">0</div>
-            </div>
-            <!-- 3. Zona Corpo a Corpo Inimiga -->
-            <div class="row melee opponent" data-type="melee">
-                <div class="row-label">Melee (Opponent)</div>
-                <div class="cards-container"></div>
-                <div class="row-score">0</div>
-            </div>
-        </div>
-
-        <!-- Divisor Central -->
-        <div class="field-divider"></div>
-
-        <!-- 2. Lado do Jogador (Baixo) -->
-        <div class="player-side">
-            <!-- 4. Zona Corpo a Corpo Jogador -->
-            <div class="row melee player" data-type="melee">
-                <div class="row-label">Melee (Player)</div>
-                <div class="cards-container"></div>
-                <div class="row-score">0</div>
-            </div>
-            <!-- 5. Zona de Ataque à Distância Jogador -->
-            <div class="row ranged player" data-type="ranged">
-                <div class="row-label">Ranged (Player)</div>
-                <div class="cards-container"></div>
-                <div class="row-score">0</div>
-            </div>
-            <!-- 6. Zona de Cerco Jogador -->
-            <div class="row siege player" data-type="siege">
-                <div class="row-label">Siege (Player)</div>
-                <div class="cards-container"></div>
-                <div class="row-score">0</div>
-            </div>
-        </div>
-
-        <!-- 3. Áreas de Controle -->
-        <div class="controls-area">
-            <!-- 7. Mão do Jogador -->
-            <div class="player-hand">
-                <div class="hand-label">Mão do Jogador</div>
-                <div class="hand-cards"></div>
-            </div>
-
-            <!-- 8. Placar -->
-            <div class="scoreboard">
-                <div class="score-title">Placar</div>
-                <div class="score-details">
-                    <div class="score-row opponent-score-row">
-                        <div class="gems-container" id="opponent-gems">
-                            <div class="gem"></div>
-                            <div class="gem"></div>
-                        </div>
-                        <span>Opponent: <span id="score-total-opponent">0</span></span>
-                    </div>
-                    <div class="score-row player-score-row">
-                        <div class="gems-container" id="player-gems">
-                            <div class="gem"></div>
-                            <div class="gem"></div>
-                        </div>
-                        <span>Player: <span id="score-total-player">0</span></span>
-                    </div>
+    <!-- Modal de Fim de Jogo -->
+    <div id="game-over-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-icon" id="modal-icon">👑</div>
+            <h1 class="modal-title" id="modal-title">VITÓRIA!</h1>
+            <p class="modal-subtitle" id="modal-subtitle">Você dominou o campo de batalha!</p>
+            <div class="modal-score">
+                <span class="score-label">Placar Final</span>
+                <div class="score-values">
+                    <span class="player-final">Jogador: <strong id="final-player-wins">0</strong></span>
+                    <span class="vs">vs</span>
+                    <span class="enemy-final">Oponente: <strong id="final-enemy-wins">0</strong></span>
                 </div>
-                <button id="pass-button" class="pass-btn">Passar Rodada</button>
+            </div>
+            <button id="play-again-btn" class="play-again-btn">
+                <span>⚔️</span> Jogar Novamente
+            </button>
+        </div>
+    </div>
+
+    <div class="game-container">
+        <!-- Coluna de Líderes (Esquerda) -->
+        <div class="leaders-column">
+            <!-- Líder do Oponente -->
+            <div class="leader-slot opponent-leader" id="enemy-leader">
+                <div class="leader-card" id="enemy-leader-card">
+                    <div class="leader-img"></div>
+                    <div class="leader-name">Líder Inimigo</div>
+                    <div class="leader-ability-text">Habilidade</div>
+                </div>
+                <div class="leader-used-overlay">USADO</div>
+            </div>
+            
+            <!-- Líder do Jogador -->
+            <div class="leader-slot player-leader" id="player-leader">
+                <div class="leader-card" id="player-leader-card">
+                    <div class="leader-img"></div>
+                    <div class="leader-name">Líder</div>
+                    <div class="leader-ability-text">Habilidade</div>
+                </div>
+                <div class="leader-used-overlay">USADO</div>
+            </div>
+        </div>
+
+        <!-- Área Principal do Tabuleiro (Centro) -->
+        <div class="main-board">
+            <!-- Lado do Oponente (Topo) -->
+            <div class="opponent-side">
+                <div class="opponent-hand-info">
+                    Cartas na Mão do Inimigo: <span id="enemy-hand-count">0</span>
+                </div>
+                <!-- Zona de Cerco Inimiga -->
+                <div class="row siege opponent" data-type="siege">
+                    <div class="row-label">Siege (Opponent)</div>
+                    <div class="cards-container"></div>
+                    <div class="row-score">0</div>
+                </div>
+                <!-- Zona de Ataque à Distância Inimiga -->
+                <div class="row ranged opponent" data-type="ranged">
+                    <div class="row-label">Ranged (Opponent)</div>
+                    <div class="cards-container"></div>
+                    <div class="row-score">0</div>
+                </div>
+                <!-- Zona Corpo a Corpo Inimiga -->
+                <div class="row melee opponent" data-type="melee">
+                    <div class="row-label">Melee (Opponent)</div>
+                    <div class="cards-container"></div>
+                    <div class="row-score">0</div>
+                </div>
+            </div>
+
+            <!-- Divisor Central -->
+            <div class="field-divider"></div>
+
+            <!-- Lado do Jogador -->
+            <div class="player-side">
+                <!-- Zona Corpo a Corpo Jogador -->
+                <div class="row melee player" data-type="melee">
+                    <div class="row-label">Melee (Player)</div>
+                    <div class="cards-container"></div>
+                    <div class="row-score">0</div>
+                </div>
+                <!-- Zona de Ataque à Distância Jogador -->
+                <div class="row ranged player" data-type="ranged">
+                    <div class="row-label">Ranged (Player)</div>
+                    <div class="cards-container"></div>
+                    <div class="row-score">0</div>
+                </div>
+                <!-- Zona de Cerco Jogador -->
+                <div class="row siege player" data-type="siege">
+                    <div class="row-label">Siege (Player)</div>
+                    <div class="cards-container"></div>
+                    <div class="row-score">0</div>
+                </div>
+            </div>
+
+            <!-- Área de Controles (Mão + Placar) -->
+            <div class="controls-area">
+                <!-- Mão do Jogador -->
+                <div class="player-hand">
+                    <div class="hand-label">Mão do Jogador</div>
+                    <div class="hand-cards"></div>
+                </div>
+
+                <!-- Placar -->
+                <div class="scoreboard">
+                    <div class="score-title">Placar</div>
+                    <div class="score-details">
+                        <div class="score-row opponent-score-row">
+                            <div class="gems-container" id="opponent-gems">
+                                <div class="gem"></div>
+                                <div class="gem"></div>
+                            </div>
+                            <span>Opponent: <span id="score-total-opponent">0</span></span>
+                        </div>
+                        <div class="score-row player-score-row">
+                            <div class="gems-container" id="player-gems">
+                                <div class="gem"></div>
+                                <div class="gem"></div>
+                            </div>
+                            <span>Player: <span id="score-total-player">0</span></span>
+                        </div>
+                    </div>
+                    <button id="pass-button" class="pass-btn">Passar Rodada</button>
+                </div>
             </div>
         </div>
     </div>

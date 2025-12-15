@@ -1,3 +1,48 @@
+// ============================================
+// ===       CARTAS DE LÍDER               ===
+// ============================================
+const leaderCardsData = [
+    {
+        id: 'leader_skinner',
+        name: 'Diretor Skinner',
+        img: 'assets/leader_skinner.png',
+        ability: 'leader_clear_weather',
+        description: 'Limpa todos os efeitos climáticos do campo de batalha.',
+        faction: 'alfredolandia',
+        isLeader: true
+    },
+    {
+        id: 'leader_superintendent',
+        name: 'Superintendente Chalmers',
+        img: 'assets/leader_chalmers.png',
+        ability: 'leader_scorch_siege',
+        description: 'Destrói a carta mais forte na fileira de Cerco inimiga.',
+        faction: 'springfield',
+        isLeader: true
+    },
+    {
+        id: 'leader_burns',
+        name: 'Sr. Burns',
+        img: 'assets/leader_burns.png',
+        ability: 'leader_draw_card',
+        description: 'Compra 1 carta do deck imediatamente.',
+        faction: 'usina',
+        isLeader: true
+    },
+    {
+        id: 'leader_krusty',
+        name: 'Krusty, O Palhaço',
+        img: 'assets/leader_krusty.png',
+        ability: 'leader_boost_melee',
+        description: 'Adiciona +2 de poder a todas as unidades na fileira Melee.',
+        faction: 'entretenimento',
+        isLeader: true
+    }
+];
+
+// ============================================
+// ===       CARTAS DO DECK                ===
+// ============================================
 const allCardsData = [
     // --- FILEIRA MELEE (Curta) ---
     {

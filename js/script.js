@@ -11,10 +11,20 @@ let enemyWins = 0;
 let playerGraveyard = [];
 let enemyGraveyard = [];
 
+// Leader State
+let playerLeader = null;
+let enemyLeader = null;
+let playerLeaderUsed = false;
+let enemyLeaderUsed = false;
+
+// Faction Passive State
+const PLAYER_FACTION = 'alfredolandia'; // "Reinos do Norte" - Compra carta ao vencer rodada
+
 document.addEventListener('DOMContentLoaded', () => {
     initializeGame();
     setupDragAndDrop();
     setupControls();
+    setupLeaders();
 });
 
 function initializeGame() {
@@ -27,9 +37,254 @@ function initializeGame() {
         enemyHand.push({ ...randomCard, id: `e${i}_${randomCard.id}` });
     }
     
+    // Initialize Leaders
+    initializeLeaders();
+    
     updateScore();
     updateEnemyHandUI();
     updateTurnVisuals();
+    updateLeaderVisuals();
+}
+
+// ============================================
+// ===       SISTEMA DE LÍDERES            ===
+// ============================================
+
+function initializeLeaders() {
+    // Assign leaders - Player gets Diretor Skinner, Enemy gets random
+    playerLeader = leaderCardsData.find(l => l.id === 'leader_skinner') || leaderCardsData[0];
+    
+    // Enemy gets a different random leader
+    const availableEnemyLeaders = leaderCardsData.filter(l => l.id !== playerLeader.id);
+    enemyLeader = availableEnemyLeaders[Math.floor(Math.random() * availableEnemyLeaders.length)] || leaderCardsData[1];
+    
+    playerLeaderUsed = false;
+    enemyLeaderUsed = false;
+    
+    renderLeaderCards();
+}
+
+function renderLeaderCards() {
+    // Player Leader
+    const playerLeaderCard = document.getElementById('player-leader-card');
+    if (playerLeaderCard && playerLeader) {
+        playerLeaderCard.querySelector('.leader-name').textContent = playerLeader.name;
+        playerLeaderCard.querySelector('.leader-ability-text').textContent = getLeaderAbilityDescription(playerLeader.ability);
+    }
+    
+    // Enemy Leader
+    const enemyLeaderCard = document.getElementById('enemy-leader-card');
+    if (enemyLeaderCard && enemyLeader) {
+        enemyLeaderCard.querySelector('.leader-name').textContent = enemyLeader.name;
+        enemyLeaderCard.querySelector('.leader-ability-text').textContent = getLeaderAbilityDescription(enemyLeader.ability);
+    }
+}
+
+function getLeaderAbilityDescription(ability) {
+    const descriptions = {
+        'leader_clear_weather': '☀️ Limpar Clima',
+        'leader_scorch_siege': '🔥 Queimar Cerco',
+        'leader_draw_card': '🃏 Comprar Carta',
+        'leader_boost_melee': '⚔️ +2 Melee'
+    };
+    return descriptions[ability] || 'Habilidade';
+}
+
+function setupLeaders() {
+    const playerLeaderSlot = document.getElementById('player-leader');
+    if (playerLeaderSlot) {
+        playerLeaderSlot.addEventListener('click', () => {
+            if (playerLeaderUsed || playerPassed || isProcessingTurn) {
+                console.log("[Líder] Não pode usar agora.");
+                return;
+            }
+            activateLeader('player');
+        });
+    }
+}
+
+function activateLeader(who) {
+    const leader = who === 'player' ? playerLeader : enemyLeader;
+    const isUsed = who === 'player' ? playerLeaderUsed : enemyLeaderUsed;
+    
+    if (!leader || isUsed) return;
+    
+    console.log(`[Líder] ${who} ativou: ${leader.name}`);
+    
+    // Execute ability
+    executeLeaderAbility(leader.ability, who);
+    
+    // Mark as used
+    if (who === 'player') {
+        playerLeaderUsed = true;
+    } else {
+        enemyLeaderUsed = true;
+    }
+    
+    updateLeaderVisuals();
+    updateScore();
+}
+
+function executeLeaderAbility(ability, who) {
+    switch (ability) {
+        case 'leader_clear_weather':
+            // Limpa todo o clima
+            clearWeather();
+            console.log(`[Líder] Clima limpo por ${who}!`);
+            break;
+            
+        case 'leader_scorch_siege':
+            // Destrói a carta mais forte na fileira de Cerco inimiga
+            const targetSide = who === 'player' ? 'opponent' : 'player';
+            const siegeRow = document.querySelector(`.row.${targetSide}[data-type="siege"] .cards-container`);
+            if (siegeRow) {
+                const cards = Array.from(siegeRow.querySelectorAll('.card'));
+                const vulnerable = cards.filter(c => c.dataset.isHero !== "true");
+                if (vulnerable.length > 0) {
+                    let maxPower = -1;
+                    vulnerable.forEach(c => {
+                        const p = parseInt(c.dataset.power);
+                        if (p > maxPower) maxPower = p;
+                    });
+                    const targets = vulnerable.filter(c => parseInt(c.dataset.power) === maxPower);
+                    targets.forEach(card => {
+                        card.classList.add('burning');
+                        setTimeout(() => {
+                            const cardObj = {
+                                id: card.dataset.id,
+                                name: card.dataset.name,
+                                type: card.dataset.type,
+                                power: parseInt(card.dataset.basePower),
+                                ability: card.dataset.ability,
+                                isHero: card.dataset.isHero === "true"
+                            };
+                            if (targetSide === 'opponent') {
+                                enemyGraveyard.push(cardObj);
+                            } else {
+                                playerGraveyard.push(cardObj);
+                            }
+                            card.remove();
+                            updateScore();
+                        }, 800);
+                    });
+                    console.log(`[Líder] Destruiu ${targets.length} carta(s) de cerco!`);
+                }
+            }
+            break;
+            
+        case 'leader_draw_card':
+            // Compra 1 carta
+            drawCard(who === 'player' ? 'player' : 'opponent', 1);
+            console.log(`[Líder] ${who} comprou 1 carta!`);
+            break;
+            
+        case 'leader_boost_melee':
+            // Adiciona +2 a todas unidades Melee do lado de quem ativou
+            const meleeSide = who === 'player' ? 'player' : 'opponent';
+            const meleeRow = document.querySelector(`.row.${meleeSide}[data-type="melee"] .cards-container`);
+            if (meleeRow) {
+                const cards = meleeRow.querySelectorAll('.card');
+                cards.forEach(card => {
+                    if (card.dataset.isHero !== "true") {
+                        const currentBase = parseInt(card.dataset.basePower);
+                        card.dataset.basePower = currentBase + 2;
+                    }
+                });
+                console.log(`[Líder] +2 poder para ${cards.length} unidades Melee!`);
+            }
+            break;
+    }
+}
+
+function updateLeaderVisuals() {
+    const playerSlot = document.getElementById('player-leader');
+    const enemySlot = document.getElementById('enemy-leader');
+    const playerCard = document.getElementById('player-leader-card');
+    const enemyCard = document.getElementById('enemy-leader-card');
+    
+    // Player Leader
+    if (playerSlot && playerCard) {
+        if (playerLeaderUsed) {
+            playerSlot.classList.add('used');
+            playerCard.classList.add('used');
+            playerCard.classList.remove('clickable', 'my-turn');
+        } else {
+            playerSlot.classList.remove('used');
+            playerCard.classList.remove('used');
+            
+            // Show clickable indicator when it's player's turn
+            if (!playerPassed && !isProcessingTurn) {
+                playerCard.classList.add('clickable', 'my-turn');
+            } else {
+                playerCard.classList.remove('clickable', 'my-turn');
+            }
+        }
+    }
+    
+    // Enemy Leader
+    if (enemySlot && enemyCard) {
+        if (enemyLeaderUsed) {
+            enemySlot.classList.add('used');
+            enemyCard.classList.add('used');
+        } else {
+            enemySlot.classList.remove('used');
+            enemyCard.classList.remove('used');
+        }
+    }
+}
+
+// IA: Decidir se deve usar o Líder
+function shouldEnemyUseLeader() {
+    if (enemyLeaderUsed || !enemyLeader) return false;
+    
+    const ability = enemyLeader.ability;
+    
+    switch (ability) {
+        case 'leader_clear_weather':
+            // Usar se clima está afetando negativamente o inimigo
+            const enemyAffected = (activeWeather.frost || activeWeather.fog || activeWeather.rain);
+            if (enemyAffected) {
+                // Verificar se tem cartas afetadas
+                const opponentRows = document.querySelectorAll('.row.opponent .cards-container');
+                let affectedCount = 0;
+                opponentRows.forEach(container => {
+                    const cards = container.querySelectorAll('.card');
+                    cards.forEach(card => {
+                        if (card.dataset.isHero !== "true") {
+                            const current = parseInt(card.dataset.power);
+                            const base = parseInt(card.dataset.basePower);
+                            if (current < base) affectedCount++;
+                        }
+                    });
+                });
+                return affectedCount >= 2; // Usar se 2+ cartas estão nerfadas
+            }
+            return false;
+            
+        case 'leader_scorch_siege':
+            // Usar se jogador tem carta forte em siege
+            const playerSiege = document.querySelector('.row.player[data-type="siege"] .cards-container');
+            if (playerSiege) {
+                const cards = Array.from(playerSiege.querySelectorAll('.card'));
+                const strong = cards.filter(c => c.dataset.isHero !== "true" && parseInt(c.dataset.power) >= 6);
+                return strong.length > 0;
+            }
+            return false;
+            
+        case 'leader_draw_card':
+            // Usar se está com poucas cartas na mão
+            return enemyHand.length <= 3;
+            
+        case 'leader_boost_melee':
+            // Usar se tem 3+ cartas em melee
+            const enemyMelee = document.querySelector('.row.opponent[data-type="melee"] .cards-container');
+            if (enemyMelee) {
+                return enemyMelee.querySelectorAll('.card').length >= 3;
+            }
+            return false;
+    }
+    
+    return false;
 }
 
 function updateEnemyHandUI() {
@@ -758,6 +1013,15 @@ function enemyTurn() {
     console.log(`[IA] Cartas na mão: Inimigo ${enemyHand.length} vs Jogador ${playerHandCount}`);
 
     // ==========================================
+    // VERIFICAR SE DEVE USAR O LÍDER
+    // ==========================================
+    if (shouldEnemyUseLeader()) {
+        console.log("[IA] Decidiu usar o Líder!");
+        activateLeader('opponent');
+        return; // Usar líder conta como ação
+    }
+
+    // ==========================================
     // REGRA 1: VERIFICAR SE DEVE PASSAR
     // ==========================================
     
@@ -1119,6 +1383,9 @@ function updateTurnVisuals() {
     } else if (!playerPassed) {
         playerSide.classList.add('active-turn');
     }
+    
+    // Atualizar visuais dos líderes também
+    updateLeaderVisuals();
 }
 
 function enemyTurnLoop() {
@@ -1161,6 +1428,17 @@ function endRound(winner) {
         playerWins++;
         message = "Você venceu a rodada!";
         updateGems("player", playerWins);
+        
+        // ==========================================
+        // PASSIVA DE FACÇÃO: ALFREDOLÂNDIA
+        // "Reinos do Norte" - Compra 1 carta ao vencer rodada
+        // ==========================================
+        if (PLAYER_FACTION === 'alfredolandia') {
+            console.log("[Passiva] Alfredolândia: Comprando 1 carta extra por vencer a rodada!");
+            drawCard('player', 1);
+            message += "\n🃏 Passiva de Facção: +1 carta!";
+        }
+        
     } else if (winner === "opponent") {
         enemyWins++;
         message = "Oponente venceu a rodada!";
@@ -1175,20 +1453,130 @@ function endRound(winner) {
         updateGems("opponent", enemyWins);
     }
 
-    alert(`${message}\nPlacar da Partida: Jogador ${playerWins} - ${enemyWins} Oponente`);
-
+    // Verificar se a partida acabou
     if (playerWins >= 2 || enemyWins >= 2) {
-        if (playerWins >= 2 && enemyWins >= 2) {
-             alert("A Partida terminou em EMPATE GERAL!");
-        } else if (playerWins >= 2) {
-            alert("PARABÉNS! VOCÊ VENCEU A PARTIDA!");
-        } else {
-            alert("GAME OVER! O Oponente venceu a partida.");
-        }
-        location.reload(); // Reset Game
+        // Mostrar modal de fim de jogo
+        showGameOverModal();
     } else {
-        prepareNextRound();
+        // Mostrar mensagem de rodada e preparar próxima
+        showRoundMessage(message);
     }
+}
+
+function showRoundMessage(message) {
+    // Criar um toast temporário em vez de alert
+    const toast = document.createElement('div');
+    toast.className = 'round-toast';
+    toast.innerHTML = `<span>${message.replace(/\n/g, '<br>')}</span>`;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.classList.add('show');
+    }, 100);
+    
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+            toast.remove();
+            prepareNextRound();
+        }, 300);
+    }, 2500);
+}
+
+function showGameOverModal() {
+    const modal = document.getElementById('game-over-modal');
+    const title = document.getElementById('modal-title');
+    const subtitle = document.getElementById('modal-subtitle');
+    const icon = document.getElementById('modal-icon');
+    const playerScore = document.getElementById('final-player-wins');
+    const enemyScore = document.getElementById('final-enemy-wins');
+    
+    // Atualizar placar
+    playerScore.textContent = playerWins;
+    enemyScore.textContent = enemyWins;
+    
+    // Determinar resultado
+    if (playerWins >= 2 && enemyWins >= 2) {
+        title.textContent = "EMPATE!";
+        title.className = "modal-title draw";
+        subtitle.textContent = "Uma batalha digna de lendas!";
+        icon.textContent = "⚖️";
+    } else if (playerWins >= 2) {
+        title.textContent = "VITÓRIA!";
+        title.className = "modal-title victory";
+        subtitle.textContent = "Você dominou o campo de batalha!";
+        icon.textContent = "👑";
+    } else {
+        title.textContent = "DERROTA";
+        title.className = "modal-title defeat";
+        subtitle.textContent = "O inimigo prevaleceu desta vez...";
+        icon.textContent = "💀";
+    }
+    
+    // Mostrar modal
+    modal.classList.remove('hidden');
+    
+    // Setup botão de jogar novamente
+    const playAgainBtn = document.getElementById('play-again-btn');
+    playAgainBtn.onclick = () => {
+        modal.classList.add('hidden');
+        resetGame();
+    };
+}
+
+function resetGame() {
+    console.log("=== REINICIANDO JOGO ===");
+    
+    // 1. Resetar variáveis de estado
+    playerWins = 0;
+    enemyWins = 0;
+    playerPassed = false;
+    enemyPassed = false;
+    isProcessingTurn = false;
+    activeWeather = { frost: false, fog: false, rain: false };
+    playerGraveyard = [];
+    enemyGraveyard = [];
+    enemyHand = [];
+    
+    // 2. Resetar estado dos líderes
+    playerLeaderUsed = false;
+    enemyLeaderUsed = false;
+    
+    // 3. Limpar tabuleiro
+    const allRows = document.querySelectorAll('.row .cards-container');
+    allRows.forEach(container => {
+        container.innerHTML = '';
+    });
+    
+    // 4. Limpar mão do jogador
+    const handContainer = document.querySelector('.hand-cards');
+    if (handContainer) {
+        handContainer.innerHTML = '';
+    }
+    
+    // 5. Resetar gemas visuais
+    document.querySelectorAll('.gem').forEach(gem => {
+        gem.classList.remove('active');
+    });
+    
+    // 6. Resetar visuais de "passed"
+    document.querySelector('.player-side')?.classList.remove('passed');
+    document.querySelector('.opponent-side')?.classList.remove('passed');
+    
+    // 7. Resetar botão de passar
+    const passBtn = document.getElementById('pass-button');
+    if (passBtn) {
+        passBtn.disabled = false;
+        passBtn.textContent = "Passar Rodada";
+    }
+    
+    // 8. Resetar clima visual
+    updateWeatherVisuals();
+    
+    // 9. Reinicializar o jogo
+    initializeGame();
+    
+    console.log("=== JOGO REINICIADO ===");
 }
 
 function updateGems(who, count) {
