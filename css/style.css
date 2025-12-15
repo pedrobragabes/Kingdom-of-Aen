@@ -810,3 +810,539 @@ img {
     text-shadow: 1px 1px 2px #000;
     line-height: 1.8;
 }
+
+/* ============================================
+   SISTEMA DE CENAS (Builder / Battle)
+   ============================================ */
+.scene {
+    display: none;
+    width: 100%;
+    height: 100vh;
+}
+
+.scene.active {
+    display: block;
+}
+
+#scene-battle.active {
+    display: flex;
+}
+
+/* ============================================
+   DECK BUILDER
+   ============================================ */
+.builder-container {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(180deg, #0d0d1a 0%, #1a1a2e 50%, #0d0d1a 100%);
+    overflow: hidden;
+}
+
+/* Header do Builder */
+.builder-header {
+    text-align: center;
+    padding: 20px;
+    background: linear-gradient(180deg, rgba(0,0,0,0.5), transparent);
+    border-bottom: 1px solid #333;
+    flex-shrink: 0;
+}
+
+.builder-title {
+    font-size: 2.5rem;
+    color: var(--gold);
+    text-shadow: 0 0 20px rgba(241, 196, 15, 0.5), 2px 2px 4px #000;
+    margin: 0;
+    letter-spacing: 3px;
+}
+
+.builder-subtitle {
+    color: #888;
+    margin-top: 5px;
+    font-size: 1rem;
+}
+
+/* Área Principal do Builder */
+.builder-main {
+    flex: 1;
+    display: flex;
+    gap: 20px;
+    padding: 20px;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* Seções do Builder (Coleção e Deck) */
+.builder-collection,
+.builder-deck {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid #333;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.builder-collection {
+    flex: 2;
+}
+
+.builder-deck {
+    flex: 1;
+    min-width: 300px;
+}
+
+.builder-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: rgba(0, 0, 0, 0.3);
+    border-bottom: 1px solid #333;
+    flex-shrink: 0;
+}
+
+.builder-section-header h2 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--gold);
+}
+
+/* Filtros de Tipo */
+.filter-tabs {
+    display: flex;
+    gap: 5px;
+}
+
+.filter-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid #444;
+    color: #aaa;
+    padding: 5px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: all 0.2s;
+}
+
+.filter-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+
+.filter-btn.active {
+    background: var(--gold);
+    color: #1a1a1a;
+    border-color: var(--gold);
+    font-weight: bold;
+}
+
+/* Botão Limpar Deck */
+.clear-deck-btn {
+    background: rgba(231, 76, 60, 0.2);
+    border: 1px solid #e74c3c;
+    color: #e74c3c;
+    padding: 5px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: all 0.2s;
+}
+
+.clear-deck-btn:hover {
+    background: rgba(231, 76, 60, 0.4);
+    color: #fff;
+}
+
+/* Grids de Cards */
+.collection-grid,
+.deck-grid {
+    flex: 1;
+    display: grid;
+    gap: 10px;
+    padding: 15px;
+    overflow-y: auto;
+    align-content: start;
+}
+
+.collection-grid {
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+}
+
+.deck-grid {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+}
+
+/* Cards no Builder */
+.builder-card {
+    width: 100%;
+    aspect-ratio: 2/3;
+    background: linear-gradient(145deg, #2d2d44, #1a1a2e);
+    border: 2px solid #555;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+}
+
+.builder-card:hover {
+    transform: translateY(-5px) scale(1.05);
+    border-color: var(--gold);
+    box-shadow: 0 5px 20px rgba(241, 196, 15, 0.3);
+    z-index: 10;
+}
+
+.builder-card.in-deck {
+    opacity: 0.4;
+    filter: grayscale(0.5);
+    pointer-events: none;
+}
+
+.builder-card.selected {
+    border-color: var(--green);
+    box-shadow: 0 0 15px rgba(46, 204, 113, 0.5);
+}
+
+/* Power Badge no Builder */
+.builder-card .card-power {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    background: #000;
+    color: #fff;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    font-size: 0.75rem;
+    border: 2px solid var(--gold);
+}
+
+/* Row Icon no Builder */
+.builder-card .row-icon {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    font-size: 0.8rem;
+}
+
+/* Card Image Placeholder */
+.builder-card .card-img-placeholder {
+    width: 80%;
+    height: 50%;
+    background: linear-gradient(135deg, #444, #333);
+    border-radius: 3px;
+    margin-bottom: 5px;
+}
+
+/* Card Name no Builder */
+.builder-card .card-name {
+    font-size: 0.6rem;
+    text-align: center;
+    color: #ddd;
+    padding: 0 3px;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Ability Badge no Builder */
+.builder-card .ability-badge {
+    position: absolute;
+    bottom: 3px;
+    right: 3px;
+    font-size: 0.65rem;
+    color: var(--gold);
+}
+
+/* Tipo de Card: Especial */
+.builder-card.special {
+    border-color: #9b59b6;
+    background: linear-gradient(145deg, #3d2d44, #2a1a2e);
+}
+
+.builder-card.special:hover {
+    border-color: #8e44ad;
+    box-shadow: 0 5px 20px rgba(155, 89, 182, 0.3);
+}
+
+/* Tipo de Card: Hero */
+.builder-card.hero {
+    border-color: var(--gold);
+    background: linear-gradient(145deg, #4a3d2d, #2e2a1a);
+}
+
+.builder-card.hero .card-power {
+    background: var(--gold-dark);
+    color: #fff;
+}
+
+/* Deck Card (versão menor) */
+.deck-card {
+    width: 100%;
+    aspect-ratio: 2/3;
+    background: linear-gradient(145deg, #2d2d44, #1a1a2e);
+    border: 2px solid #555;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    font-size: 0.6rem;
+}
+
+.deck-card:hover {
+    border-color: #e74c3c;
+    box-shadow: 0 0 10px rgba(231, 76, 60, 0.4);
+}
+
+.deck-card .card-power {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    background: #000;
+    color: #fff;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    font-size: 0.65rem;
+    border: 1px solid var(--gold);
+}
+
+.deck-card .card-name {
+    font-size: 0.55rem;
+    text-align: center;
+    color: #ddd;
+    padding: 0 2px;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.deck-card .remove-hint {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(231, 76, 60, 0.9);
+    color: white;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+}
+
+.deck-card:hover .remove-hint {
+    display: flex;
+}
+
+/* Footer do Builder */
+.builder-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 30px;
+    background: rgba(0, 0, 0, 0.5);
+    border-top: 1px solid #333;
+    flex-shrink: 0;
+}
+
+/* Stats do Deck */
+.deck-stats {
+    display: flex;
+    gap: 30px;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.stat-label {
+    font-size: 0.7rem;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--text-color);
+}
+
+.stat-requirement {
+    font-size: 0.6rem;
+    color: #555;
+}
+
+.stat-item.stat-power .stat-value {
+    color: var(--gold);
+}
+
+.stat-item.invalid .stat-value {
+    color: #e74c3c;
+}
+
+.stat-item.valid .stat-value {
+    color: #2ecc71;
+}
+
+/* Ações do Builder */
+.builder-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+}
+
+.validation-message {
+    font-size: 0.8rem;
+    color: #e74c3c;
+    text-align: right;
+}
+
+.validation-message.valid {
+    color: #2ecc71;
+}
+
+/* Botão Jogar */
+.play-btn {
+    background: linear-gradient(145deg, var(--gold), var(--gold-dark));
+    color: #1a1a1a;
+    border: none;
+    padding: 15px 40px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    box-shadow: 0 5px 15px rgba(241, 196, 15, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.play-btn:hover:not(:disabled) {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(241, 196, 15, 0.5);
+    background: linear-gradient(145deg, #ffd700, var(--gold));
+}
+
+.play-btn:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.play-btn:disabled {
+    background: linear-gradient(145deg, #444, #333);
+    color: #666;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+/* Botão Voltar ao Builder */
+.back-btn {
+    background: transparent;
+    border: 1px solid #555;
+    color: #888;
+    padding: 10px 20px;
+    font-size: 0.9rem;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 15px;
+}
+
+.back-btn:hover {
+    border-color: var(--gold);
+    color: var(--gold);
+}
+
+/* Deck Indicator na Batalha */
+.deck-indicator {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    margin: auto 0;
+}
+
+.deck-icon {
+    font-size: 2rem;
+}
+
+.deck-indicator span {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--gold);
+}
+
+/* Scrollbar Customizado */
+.collection-grid::-webkit-scrollbar,
+.deck-grid::-webkit-scrollbar {
+    width: 8px;
+}
+
+.collection-grid::-webkit-scrollbar-track,
+.deck-grid::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+}
+
+.collection-grid::-webkit-scrollbar-thumb,
+.deck-grid::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 4px;
+}
+
+.collection-grid::-webkit-scrollbar-thumb:hover,
+.deck-grid::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Animações do Builder */
+@keyframes cardAddToDeck {
+    0% { transform: scale(1); }
+    50% { transform: scale(0.8); opacity: 0.5; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes cardRemoveFromDeck {
+    0% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(0.8); opacity: 0; }
+}
+
+.builder-card.adding {
+    animation: cardAddToDeck 0.3s ease;
+}
+
+.deck-card.removing {
+    animation: cardRemoveFromDeck 0.3s ease forwards;
+}

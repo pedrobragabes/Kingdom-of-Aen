@@ -11,6 +11,10 @@ let enemyWins = 0;
 let playerGraveyard = [];
 let enemyGraveyard = [];
 
+// Deck State (NEW)
+let playerDeck = []; // Deck embaralhado do jogador (objetos de carta)
+let enemyDeck = [];  // Deck embaralhado do inimigo (objetos de carta)
+
 // Leader State
 let playerLeader = null;
 let enemyLeader = null;
@@ -21,7 +25,8 @@ let enemyLeaderUsed = false;
 const PLAYER_FACTION = 'alfredolandia'; // "Reinos do Norte" - Compra carta ao vencer rodada
 
 document.addEventListener('DOMContentLoaded', () => {
-    initializeGame();
+    // NÃO inicializar automaticamente - esperar pelo Deck Builder
+    // initializeGame(); // REMOVIDO
     setupDragAndDrop();
     setupControls();
     setupLeaders();
@@ -44,6 +49,72 @@ function initializeGame() {
     updateEnemyHandUI();
     updateTurnVisuals();
     updateLeaderVisuals();
+}
+
+// ============================================
+// ===  INICIALIZAÇÃO COM DECK DO BUILDER  ===
+// ============================================
+
+function initializeGameWithDeck(deckIds) {
+    console.log("=== INICIANDO JOGO COM DECK ===");
+    console.log("Deck IDs:", deckIds);
+    
+    // 1. Converter IDs para objetos de carta e embaralhar
+    playerDeck = shuffleArray(idsToCards(deckIds));
+    console.log("Deck embaralhado:", playerDeck.length, "cartas");
+    
+    // 2. Criar deck do inimigo (usa toda coleção embaralhada - filtra por category)
+    const enemyDeckIds = CARD_COLLECTION
+        .filter(c => c.category === 'unit') // Só unidades para simplificar
+        .map(c => c.id);
+    enemyDeck = shuffleArray(idsToCards(enemyDeckIds));
+    console.log("Deck inimigo:", enemyDeck.length, "cartas");
+    
+    // 3. Comprar 10 cartas para a mão do jogador
+    const playerStartingHand = playerDeck.splice(0, 10);
+    renderHandFromCards(playerStartingHand);
+    
+    // 4. Comprar 10 cartas para a mão do inimigo
+    enemyHand = enemyDeck.splice(0, 10).map((card, i) => ({
+        ...card,
+        id: `e${i}_${card.id}` // ID único
+    }));
+    
+    // 5. Inicializar Líderes
+    initializeLeaders();
+    
+    // 6. Atualizar UI
+    updateScore();
+    updateEnemyHandUI();
+    updateDeckCountUI();
+    updateTurnVisuals();
+    updateLeaderVisuals();
+    
+    console.log("=== JOGO INICIADO ===");
+}
+
+function renderHandFromCards(cards) {
+    const handContainer = document.querySelector('.hand-cards');
+    if (!handContainer) return;
+    
+    handContainer.innerHTML = '';
+    
+    cards.forEach((card, index) => {
+        // Clonar para evitar modificar o original
+        const cardWithUniqueId = { 
+            ...card, 
+            id: `p${index}_${card.id}` // ID único para a instância na mão
+        };
+        const cardElement = createCardElement(cardWithUniqueId);
+        handContainer.appendChild(cardElement);
+    });
+}
+
+function updateDeckCountUI() {
+    const deckCountEl = document.getElementById('player-deck-count');
+    if (deckCountEl) {
+        deckCountEl.textContent = playerDeck.length;
+    }
 }
 
 // ============================================
@@ -336,18 +407,24 @@ function createCardElement(card) {
     el.classList.add('card');
     el.draggable = true; // Enable native drag
     el.dataset.id = card.id;
-    el.dataset.type = card.type;
-    el.dataset.kind = card.kind || "unit"; // Default to unit
+    el.dataset.type = card.type; // melee, ranged, siege
+    el.dataset.category = card.category || "unit"; // unit ou special
     el.dataset.power = card.power; // Current power
     el.dataset.basePower = card.power; // Original power for resets/calculations
     el.dataset.name = card.name;
     el.dataset.ability = card.ability || "none";
     el.dataset.isHero = card.isHero || "false";
     if (card.partner) el.dataset.partner = card.partner;
-    if (card.row) el.dataset.row = card.row;
+    // Para cartas agile (row: 'all'), permite jogar em qualquer fileira
+    if (card.row === 'all') el.dataset.agile = "true";
 
     if (card.isHero) {
         el.classList.add('hero-card');
+    }
+    
+    // Estilo para spy
+    if (card.ability === 'spy' || card.ability === 'spy_medic') {
+        el.classList.add('spy-card');
     }
 
     // Power Badge
@@ -675,17 +752,27 @@ function applySpy(cardElement, currentRow) {
 function drawCard(who, count) {
     for (let i = 0; i < count; i++) {
         if (who === 'player') {
-            const randomCard = allCardsData[Math.floor(Math.random() * allCardsData.length)];
-            const newCard = { ...randomCard, id: `p_draw_${Date.now()}_${i}_${randomCard.id}` };
-            const handContainer = document.querySelector('.hand-cards');
-            if (handContainer) {
-                handContainer.appendChild(createCardElement(newCard));
+            // Comprar do deck do jogador
+            if (playerDeck.length > 0) {
+                const drawnCard = playerDeck.shift();
+                const newCard = { ...drawnCard, id: `p_draw_${Date.now()}_${i}_${drawnCard.id}` };
+                const handContainer = document.querySelector('.hand-cards');
+                if (handContainer) {
+                    handContainer.appendChild(createCardElement(newCard));
+                }
+                updateDeckCountUI();
+            } else {
+                console.log("[Draw] Deck do jogador vazio!");
             }
         } else {
-            // Add to enemy hand array
-            const randomCard = allCardsData[Math.floor(Math.random() * allCardsData.length)];
-            enemyHand.push({ ...randomCard, id: `e_draw_${Date.now()}_${i}_${randomCard.id}` });
-            updateEnemyHandUI();
+            // Comprar do deck do inimigo
+            if (enemyDeck.length > 0) {
+                const drawnCard = enemyDeck.shift();
+                enemyHand.push({ ...drawnCard, id: `e_draw_${Date.now()}_${i}_${drawnCard.id}` });
+                updateEnemyHandUI();
+            } else {
+                console.log("[Draw] Deck do inimigo vazio!");
+            }
         }
     }
     console.log(`${who} comprou ${count} cartas.`);
@@ -1537,6 +1624,8 @@ function resetGame() {
     playerGraveyard = [];
     enemyGraveyard = [];
     enemyHand = [];
+    playerDeck = [];
+    enemyDeck = [];
     
     // 2. Resetar estado dos líderes
     playerLeaderUsed = false;
@@ -1573,8 +1662,13 @@ function resetGame() {
     // 8. Resetar clima visual
     updateWeatherVisuals();
     
-    // 9. Reinicializar o jogo
-    initializeGame();
+    // 9. Reinicializar o jogo com o deck salvo
+    if (typeof playerDeckIds !== 'undefined' && playerDeckIds.length > 0) {
+        initializeGameWithDeck(playerDeckIds);
+    } else {
+        // Fallback: se não tiver deck do builder, usa sistema antigo
+        initializeGame();
+    }
     
     console.log("=== JOGO REINICIADO ===");
 }
@@ -1729,10 +1823,10 @@ function drop(e) {
     const card = document.querySelector(`.card[data-id="${cardId}"]`);
     if (!card) return;
 
-    const cardRow = card.dataset.row;
+    const isAgile = card.dataset.agile === 'true';
 
-    // Validation: Card Type must match Row Type OR Card is Weather OR Card Row is 'all'
-    if (cardType === 'weather' || cardType === rowType || cardRow === 'all') {
+    // Validation: Card Type must match Row Type OR Card is Weather OR Card is Agile
+    if (cardType === 'weather' || cardType === rowType || isAgile) {
         if (card) {
             // Decoy Check: Cannot be dropped on row (must target a card)
             if (card.dataset.ability === 'decoy') {
