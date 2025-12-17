@@ -320,19 +320,19 @@ function setupBuilderEvents() {
     // Botão Limpar
     const clearBtn = document.getElementById('clear-deck-btn');
     if (clearBtn) {
-        clearBtn.addEventListener('click', clearDeck);
+        clearBtn.addEventListener('click', (e) => { try { audioManager.playSFX('mouseclick'); } catch (err) {} ; clearDeck(); });
     }
     
     // Botão Iniciar Batalha
     const startBtn = document.getElementById('start-game-btn');
     if (startBtn) {
-        startBtn.addEventListener('click', startBattle);
+        startBtn.addEventListener('click', (e) => { try { audioManager.playSFX('mouseclick'); } catch (err) {} ; startBattle(); });
     }
     
     // Botão Voltar ao Builder (no modal de fim de jogo)
     const backBtn = document.getElementById('back-to-builder-btn');
     if (backBtn) {
-        backBtn.addEventListener('click', backToBuilder);
+        backBtn.addEventListener('click', (e) => { try { audioManager.playSFX('mouseclick'); } catch (err) {} ; backToBuilder(); });
     }
 }
 
@@ -346,7 +346,9 @@ function startBattle() {
         alert('Deck inválido! ' + validation.errors.join(' '));
         return;
     }
-    
+    // Play shuffle SFX when starting the battle
+    try { audioManager.playSFX('shuffle'); } catch (e) { console.warn('SFX failed', e); }
+
     // Esconde o builder, mostra a batalha
     document.getElementById('scene-builder').classList.remove('active');
     document.getElementById('scene-battle').classList.add('active');

@@ -23,6 +23,136 @@ const ABILITY_DESCRIPTIONS = {
     'clear_weather': 'Limpa todo clima'
 };
 
+// ============================================
+// Audio Manager (advanced)
+// ============================================
+class AudioManager {
+    constructor(basePath = 'audio/') {
+        this.basePath = basePath.endsWith('/') ? basePath : basePath + '/';
+
+        // Music (use provided background filename)
+        this.musicFile = this.basePath + 'music_bg.mp3';
+        this.music = new Audio(this.musicFile);
+        this.music.loop = true;
+        this.music.volume = 0.4;
+        this.isMusicPlaying = false;
+        this.sfxMuted = false;
+        this.musicMuted = false;
+        this.storageKey = 'kingdom_audio_muted';
+        // Load persisted mute state
+        try {
+            const saved = localStorage.getItem(this.storageKey);
+            if (saved === 'true') {
+                this.sfxMuted = true;
+                this.musicMuted = true;
+                this.music.muted = true;
+            }
+        } catch (e) { /* ignore */ }
+
+        // SFX sets
+        this.sfx = {
+            'card-place': [
+                this.basePath + 'card-place-1.ogg',
+                this.basePath + 'card-place-2.ogg',
+                this.basePath + 'card-place-3.ogg',
+                this.basePath + 'card-place-4.ogg'
+            ],
+            'card-slide': [ this.basePath + 'card-slide-1.ogg' ],
+            'shuffle': [ this.basePath + 'card-shuffle.ogg' ],
+            'mouseclick': [ this.basePath + 'mouseclick1.ogg' ],
+            'switch': [ this.basePath + 'switch4.ogg' ]
+        };
+
+        // Preload Audio elements for low-latency
+        this._preloaded = {};
+        this._preloadAll();
+    }
+
+    _preloadAll() {
+        // Preload music (do not autoplay)
+        try {
+            this.music.preload = 'auto';
+            this.music.load();
+        } catch (e) { /* ignore */ }
+
+        // Preload SFX (create Audio objects but don't reuse for playing to avoid locking)
+        Object.keys(this.sfx).forEach(key => {
+            this._preloaded[key] = this.sfx[key].map(src => {
+                try {
+                    const a = new Audio(src);
+                    a.preload = 'auto';
+                    a.load();
+                    return src;
+                } catch (e) {
+                    return src; // keep src even if Audio creation fails now
+                }
+            });
+        });
+    }
+
+    playMusic() {
+        if (this.isMusicPlaying) return;
+        if (this.musicMuted) this.music.muted = true;
+        this.music.play().then(() => {
+            this.isMusicPlaying = true;
+        }).catch(err => {
+            console.warn('[AudioManager] playMusic blocked:', err);
+        });
+    }
+
+    stopMusic() {
+        try {
+            this.music.pause();
+            this.music.currentTime = 0;
+            this.isMusicPlaying = false;
+        } catch (e) {
+            console.warn('[AudioManager] stopMusic error', e);
+        }
+    }
+
+    setMute(muted) {
+        this.sfxMuted = !!muted;
+        this.musicMuted = !!muted;
+        try {
+            this.music.muted = !!muted;
+            localStorage.setItem(this.storageKey, muted ? 'true' : 'false');
+        } catch (e) { /* ignore */ }
+    }
+
+    toggleMute() {
+        const newState = !this.sfxMuted;
+        this.setMute(newState);
+        return newState;
+    }
+
+    _randomFrom(key) {
+        const arr = this._preloaded[key] || this.sfx[key] || [];
+        if (!arr || arr.length === 0) return null;
+        return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    playSFX(type) {
+        try {
+            if (this.sfxMuted) return;
+            const src = this._randomFrom(type);
+            if (!src) return;
+            // Create a fresh Audio to allow overlapping
+            const sfx = new Audio(src);
+            sfx.volume = 1.0;
+            sfx.muted = this.sfxMuted;
+            sfx.play().catch(err => {
+                // Silently ignore play errors (autoplay policies, etc.)
+                console.warn('[AudioManager] SFX play blocked', err);
+            });
+        } catch (e) {
+            console.warn('[AudioManager] playSFX error', e);
+        }
+    }
+}
+
+// Create global instance
+const audioManager = new AudioManager('audio');
+
 // Game State
 let activeWeather = { frost: false, fog: false, rain: false };
 let enemyHand = [];
@@ -53,6 +183,37 @@ document.addEventListener('DOMContentLoaded', () => {
     setupDragAndDrop();
     setupControls();
     setupLeaders();
+    // Start music on first user interaction (browser gesture requirement)
+    document.addEventListener('click', () => {
+        try { audioManager.playMusic(); } catch(e) { console.warn('Audio start failed', e); }
+    }, { once: true });
+    
+    // Create mute/unmute toggle button
+    try {
+        const btn = document.createElement('button');
+        btn.id = 'audio-toggle-btn';
+        btn.title = 'Mute / Unmute Audio';
+        btn.className = 'audio-toggle';
+        const setLabel = (muted) => btn.textContent = muted ? '🔇' : '🔊';
+        // initialize label from audioManager state
+        setLabel(audioManager.sfxMuted || audioManager.musicMuted);
+        btn.addEventListener('click', (e) => {
+            const newMuted = audioManager.toggleMute();
+            setLabel(newMuted);
+        });
+        // Style minimally and insert
+        btn.style.position = 'fixed';
+        btn.style.right = '12px';
+        btn.style.top = '12px';
+        btn.style.zIndex = 9999;
+        btn.style.background = 'rgba(0,0,0,0.6)';
+        btn.style.color = '#fff';
+        btn.style.border = 'none';
+        btn.style.padding = '8px 10px';
+        btn.style.borderRadius = '6px';
+        btn.style.cursor = 'pointer';
+        document.body.appendChild(btn);
+    } catch (e) { console.warn('Failed to create audio toggle', e); }
 });
 
 function initializeGame() {
@@ -423,6 +584,9 @@ function setupControls() {
             document.querySelector('.player-side').classList.add('passed');
             updateTurnVisuals();
 
+            // Play button SFX
+            try { audioManager.playSFX('switch'); } catch (e) { console.warn('SFX failed', e); }
+
             // If player passes, enemy plays until they win or pass
             if (!enemyPassed) {
                 enemyTurnLoop();
@@ -618,6 +782,9 @@ function createCardElement(card) {
         
         // 4. Update Game State
         updateScore();
+
+        // Play card SFX for Decoy placement
+        try { audioManager.playSFX('card-place'); } catch (e) { console.warn('SFX failed', e); }
 
         // 5. Trigger Enemy Turn (apenas UMA carta)
         if (!enemyPassed) {
@@ -1476,6 +1643,7 @@ function enemyTurn() {
         bestDecoyTarget.remove();
         
         updateScore();
+        try { audioManager.playSFX('card-place'); } catch (e) { console.warn('SFX failed', e); }
         return;
     }
 
@@ -1491,6 +1659,7 @@ function enemyTurn() {
         triggerAbility(cardElement, dummyRow);
         enemyGraveyard.push(cardToPlay);
         console.log(`[IA] Clima ativado: ${cardToPlay.name}`);
+        try { audioManager.playSFX('card-place'); } catch (e) { console.warn('SFX failed', e); }
     } else {
         // Determinar fileira alvo
         let rowType = cardToPlay.type;
@@ -1508,6 +1677,7 @@ function enemyTurn() {
             // Ativar habilidade
             const row = targetContainer.closest('.row');
             triggerAbility(cardElement, row);
+                try { audioManager.playSFX('card-place'); } catch (e) { console.warn('SFX failed', e); }
             
             console.debug('[DEBUG enemyTurn] played card', { name: cardToPlay.name, type: cardToPlay.type, row: rowType });
 
@@ -1668,11 +1838,13 @@ function showGameOverModal() {
         title.className = "modal-title victory";
         subtitle.textContent = "Você dominou o campo de batalha!";
         icon.textContent = "👑";
+        try { audioManager.playSFX('switch'); } catch (e) { console.warn('SFX failed', e); }
     } else {
         title.textContent = "DERROTA";
         title.className = "modal-title defeat";
         subtitle.textContent = "O inimigo prevaleceu desta vez...";
         icon.textContent = "💀";
+        try { audioManager.playSFX('switch'); } catch (e) { console.warn('SFX failed', e); }
     }
     
     // Mostrar modal
@@ -1681,6 +1853,7 @@ function showGameOverModal() {
     // Setup botão de jogar novamente
     const playAgainBtn = document.getElementById('play-again-btn');
     playAgainBtn.onclick = () => {
+        try { audioManager.playSFX('mouseclick'); } catch (e) {}
         modal.classList.add('hidden');
         resetGame();
     };
@@ -1934,6 +2107,9 @@ function drop(e) {
                 // Update Score (Weather effect applied)
                 updateScore();
 
+                // Play SFX for playing a card (weather)
+                try { audioManager.playSFX('card-place'); } catch (e) { console.warn('SFX failed', e); }
+
                 // Trigger Enemy Turn (apenas UMA carta)
                 if (!enemyPassed) {
                     isProcessingTurn = true;
@@ -1958,6 +2134,9 @@ function drop(e) {
 
                 // Update Score
                 updateScore();
+
+                // Play SFX for playing a card (normal)
+                try { audioManager.playSFX('card-place'); } catch (e) { console.warn('SFX failed', e); }
 
                 // Handle Special Cards (Spells) - Remove after use
                 if (card.dataset.kind === 'special') {
