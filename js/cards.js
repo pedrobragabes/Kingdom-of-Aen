@@ -3,39 +3,39 @@
 // ============================================
 const leaderCardsData = [
     {
-        id: 'leader_skinner',
-        name: 'Diretor Skinner',
-        img: 'assets/leader_skinner.png',
+        id: 'leader_general',
+        name: 'O General',
+        img: 'assets/leader_general.png',
         ability: 'leader_clear_weather',
         description: 'Limpa todos os efeitos climáticos do campo de batalha.',
         faction: 'alfredolandia',
         isLeader: true
     },
     {
-        id: 'leader_superintendent',
-        name: 'Superintendente Chalmers',
-        img: 'assets/leader_chalmers.png',
+        id: 'leader_usurper',
+        name: 'O Usurpador',
+        img: 'assets/leader_usurper.png',
         ability: 'leader_scorch_siege',
         description: 'Destrói a carta mais forte na fileira de Cerco inimiga.',
-        faction: 'springfield',
+        faction: 'reinos_sombrios',
         isLeader: true
     },
     {
-        id: 'leader_burns',
-        name: 'Sr. Burns',
-        img: 'assets/leader_burns.png',
+        id: 'leader_archmage',
+        name: 'O Arquimago',
+        img: 'assets/leader_archmage.png',
         ability: 'leader_draw_card',
         description: 'Compra 1 carta do deck imediatamente.',
-        faction: 'usina',
+        faction: 'torre_arcana',
         isLeader: true
     },
     {
-        id: 'leader_krusty',
-        name: 'Krusty, O Palhaço',
-        img: 'assets/leader_krusty.png',
+        id: 'leader_warlord',
+        name: 'O Senhor da Guerra',
+        img: 'assets/leader_warlord.png',
         ability: 'leader_boost_melee',
         description: 'Adiciona +2 de poder a todas as unidades na fileira Melee.',
-        faction: 'entretenimento',
+        faction: 'horda_selvagem',
         isLeader: true
     }
 ];

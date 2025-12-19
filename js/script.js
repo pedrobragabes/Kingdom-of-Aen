@@ -57,10 +57,10 @@ class AudioManager {
                 this.basePath + 'card-place-3.ogg',
                 this.basePath + 'card-place-4.ogg'
             ],
-            'card-slide': [ this.basePath + 'card-slide-1.ogg' ],
-            'shuffle': [ this.basePath + 'card-shuffle.ogg' ],
-            'mouseclick': [ this.basePath + 'mouseclick1.ogg' ],
-            'switch': [ this.basePath + 'switch4.ogg' ]
+            'card-slide': [this.basePath + 'card-slide-1.ogg'],
+            'shuffle': [this.basePath + 'card-shuffle.ogg'],
+            'mouseclick': [this.basePath + 'mouseclick1.ogg'],
+            'switch': [this.basePath + 'switch4.ogg']
         };
 
         // Preload Audio elements for low-latency
@@ -185,9 +185,9 @@ document.addEventListener('DOMContentLoaded', () => {
     setupLeaders();
     // Start music on first user interaction (browser gesture requirement)
     document.addEventListener('click', () => {
-        try { audioManager.playMusic(); } catch(e) { console.warn('Audio start failed', e); }
+        try { audioManager.playMusic(); } catch (e) { console.warn('Audio start failed', e); }
     }, { once: true });
-    
+
     // Create mute/unmute toggle button
     try {
         const btn = document.createElement('button');
@@ -220,15 +220,15 @@ function initializeGame() {
     renderHand();
     // Initialize Enemy Hand with random cards from DB (simulating a deck)
     enemyHand = []; // Reset to ensure clean start
-    for (let i = 0; i < 10; i++) { 
+    for (let i = 0; i < 10; i++) {
         const randomCard = allCardsData[Math.floor(Math.random() * allCardsData.length)];
         // Clone object to avoid reference issues if we modify it later
         enemyHand.push({ ...randomCard, id: `e${i}_${randomCard.id}` });
     }
-    
+
     // Initialize Leaders
     initializeLeaders();
-    
+
     updateScore();
     updateEnemyHandUI();
     updateTurnVisuals();
@@ -238,6 +238,10 @@ function initializeGame() {
 // ============================================
 // ===  INICIALIZAÇÃO COM DECK DO BUILDER  ===
 // ============================================
+
+// Mulligan State
+let mulliganHand = []; // Mão temporária durante o mulligan
+let mulliganRedraws = 2; // Trocas restantes
 
 function initializeGameWithDeck(deckIds) {
     console.log("=== INICIANDO JOGO COM DECK ===");
@@ -272,41 +276,257 @@ function initializeGameWithDeck(deckIds) {
     }
     enemyDeck = shuffleArray(convertedEnemyCards || []);
     console.log("Deck inimigo (built):", enemyDeck.length, "cartas");
-    
-    // 3. Comprar 10 cartas para a mão do jogador
+
+    // 3. Comprar 10 cartas para a mão do jogador (NÃO renderiza ainda - vai para Mulligan)
     const playerStartingHand = playerDeck.splice(0, 10);
-    renderHandFromCards(playerStartingHand);
-    
+
     // 4. Comprar 10 cartas para a mão do inimigo
     enemyHand = enemyDeck.splice(0, 10).map((card, i) => ({
         ...card,
         id: `e${i}_${card.id}` // ID único
     }));
     console.log('[DEBUG initializeGameWithDeck] enemyHand length after draw:', enemyHand.length);
-    
+
     // 5. Inicializar Líderes
     initializeLeaders();
-    
+
+    // 6. INICIAR FASE DE MULLIGAN (ao invés de começar o jogo diretamente)
+    startMulligan(playerStartingHand);
+
+    console.log("=== AGUARDANDO MULLIGAN ===");
+}
+
+// ============================================
+// ===     SISTEMA DE MULLIGAN (Troca)     ===
+// ============================================
+
+function startMulligan(playerHand) {
+    console.log("[Mulligan] Iniciando fase de troca...");
+
+    // Resetar estado
+    mulliganHand = playerHand.map((card, i) => ({
+        ...card,
+        id: `p${i}_${card.id}` // ID único para a instância
+    }));
+    mulliganRedraws = 2;
+
+    // Atualizar contador na UI
+    const redrawCountEl = document.getElementById('redraw-count');
+    if (redrawCountEl) {
+        redrawCountEl.textContent = mulliganRedraws;
+        redrawCountEl.classList.remove('exhausted');
+    }
+
+    // Renderizar cartas no overlay
+    renderMulliganCards();
+
+    // Mostrar overlay
+    const overlay = document.getElementById('mulligan-overlay');
+    if (overlay) {
+        overlay.classList.remove('hidden');
+    }
+
+    // Setup botão de confirmar
+    const confirmBtn = document.getElementById('mulligan-confirm-btn');
+    if (confirmBtn) {
+        confirmBtn.onclick = finishMulligan;
+    }
+
+    // Tocar SFX de shuffle
+    try { audioManager.playSFX('shuffle'); } catch (e) { console.warn('SFX failed', e); }
+}
+
+function renderMulliganCards() {
+    const container = document.getElementById('mulligan-cards');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    mulliganHand.forEach((card, index) => {
+        const cardEl = createMulliganCardElement(card, index);
+        container.appendChild(cardEl);
+    });
+}
+
+function createMulliganCardElement(card, index) {
+    const el = document.createElement('div');
+    el.classList.add('mulligan-card');
+    el.dataset.index = index;
+    el.dataset.id = card.id;
+
+    // Background image
+    if (card.img) {
+        el.style.backgroundImage = `url('${card.img}')`;
+    }
+
+    // Overlay for readability
+    const overlay = document.createElement('div');
+    overlay.classList.add('card-overlay');
+    el.appendChild(overlay);
+
+    // Strength badge
+    const strengthBadge = document.createElement('div');
+    strengthBadge.classList.add('card-strength-badge');
+    strengthBadge.textContent = card.power;
+    el.appendChild(strengthBadge);
+
+    // Info container
+    const infoContainer = document.createElement('div');
+    infoContainer.classList.add('card-info-container');
+
+    // Card name
+    const nameDiv = document.createElement('div');
+    nameDiv.classList.add('card-name');
+    nameDiv.textContent = card.name;
+    infoContainer.appendChild(nameDiv);
+
+    // Card description
+    const descDiv = document.createElement('div');
+    descDiv.classList.add('card-desc');
+    if (card.ability && card.ability !== 'none') {
+        descDiv.textContent = ABILITY_DESCRIPTIONS[card.ability] || card.ability;
+    } else {
+        descDiv.textContent = card.type ? card.type.charAt(0).toUpperCase() + card.type.slice(1) : '';
+    }
+    infoContainer.appendChild(descDiv);
+
+    el.appendChild(infoContainer);
+
+    // Click event for redraw
+    el.addEventListener('click', () => redrawCard(index));
+
+    // Disable if no redraws left
+    if (mulliganRedraws <= 0) {
+        el.classList.add('disabled');
+    }
+
+    return el;
+}
+
+function redrawCard(index) {
+    // Verificar se ainda pode trocar
+    if (mulliganRedraws <= 0) {
+        console.log("[Mulligan] Sem trocas restantes!");
+        return;
+    }
+
+    // Verificar se o deck tem cartas
+    if (playerDeck.length === 0) {
+        console.log("[Mulligan] Deck vazio!");
+        return;
+    }
+
+    const oldCard = mulliganHand[index];
+    console.log(`[Mulligan] Trocando carta: ${oldCard.name}`);
+
+    // 1. Devolver carta antiga ao deck (sem o ID único)
+    const cardToReturn = { ...oldCard };
+    delete cardToReturn.id; // Remover ID único para reinserir
+    // Reinserir com o id original
+    const originalCard = CARD_COLLECTION.find(c => oldCard.id.includes(c.id));
+    if (originalCard) {
+        playerDeck.push({ ...originalCard });
+    } else {
+        playerDeck.push(cardToReturn);
+    }
+
+    // 2. Embaralhar o deck
+    playerDeck = shuffleArray(playerDeck);
+
+    // 3. Comprar nova carta do topo
+    const newCard = playerDeck.shift();
+    const newCardWithId = {
+        ...newCard,
+        id: `p${index}_${newCard.id}` // Novo ID único
+    };
+
+    // 4. Substituir na mão
+    mulliganHand[index] = newCardWithId;
+
+    // 5. Decrementar contador
+    mulliganRedraws--;
+
     // 6. Atualizar UI
+    const redrawCountEl = document.getElementById('redraw-count');
+    if (redrawCountEl) {
+        redrawCountEl.textContent = mulliganRedraws;
+        if (mulliganRedraws <= 0) {
+            redrawCountEl.classList.add('exhausted');
+        }
+    }
+
+    // 7. Animar e re-renderizar a carta específica
+    const container = document.getElementById('mulligan-cards');
+    if (container) {
+        const cardEl = container.querySelector(`[data-index="${index}"]`);
+        if (cardEl) {
+            cardEl.classList.add('swapping');
+
+            setTimeout(() => {
+                // Substituir o elemento
+                const newCardEl = createMulliganCardElement(newCardWithId, index);
+                newCardEl.classList.add('swapped');
+                cardEl.replaceWith(newCardEl);
+            }, 250);
+        }
+    }
+
+    // 8. Desabilitar todas as cartas se não houver mais trocas
+    if (mulliganRedraws <= 0) {
+        setTimeout(() => {
+            const allCards = container.querySelectorAll('.mulligan-card');
+            allCards.forEach(card => {
+                if (!card.classList.contains('swapped')) {
+                    card.classList.add('disabled');
+                }
+            });
+        }, 300);
+    }
+
+    // 9. Tocar SFX
+    try { audioManager.playSFX('card-slide'); } catch (e) { console.warn('SFX failed', e); }
+
+    console.log(`[Mulligan] Nova carta: ${newCardWithId.name}. Trocas restantes: ${mulliganRedraws}`);
+}
+
+function finishMulligan() {
+    console.log("[Mulligan] Finalizando fase de troca...");
+
+    // 1. Esconder overlay
+    const overlay = document.getElementById('mulligan-overlay');
+    if (overlay) {
+        overlay.classList.add('hidden');
+    }
+
+    // 2. Renderizar mão final no rodapé
+    renderHandFromCards(mulliganHand);
+
+    // 3. Atualizar UI
     updateScore();
     updateEnemyHandUI();
     updateDeckCountUI();
     updateTurnVisuals();
     updateLeaderVisuals();
-    
+
+    // 4. Iniciar música de batalha (se não estiver tocando)
+    try { audioManager.playMusic(); } catch (e) { console.warn('Music failed', e); }
+
+    // 5. Tocar SFX de início
+    try { audioManager.playSFX('switch'); } catch (e) { console.warn('SFX failed', e); }
+
     console.log("=== JOGO INICIADO ===");
 }
 
 function renderHandFromCards(cards) {
     const handContainer = document.querySelector('.hand-cards');
     if (!handContainer) return;
-    
+
     handContainer.innerHTML = '';
-    
+
     cards.forEach((card, index) => {
         // Clonar para evitar modificar o original
-        const cardWithUniqueId = { 
-            ...card, 
+        const cardWithUniqueId = {
+            ...card,
             id: `p${index}_${card.id}` // ID único para a instância na mão
         };
         const cardElement = createCardElement(cardWithUniqueId);
@@ -326,16 +546,16 @@ function updateDeckCountUI() {
 // ============================================
 
 function initializeLeaders() {
-    // Assign leaders - Player gets Diretor Skinner, Enemy gets random
-    playerLeader = leaderCardsData.find(l => l.id === 'leader_skinner') || leaderCardsData[0];
-    
+    // Assign leaders - Player gets O General, Enemy gets random
+    playerLeader = leaderCardsData.find(l => l.id === 'leader_general') || leaderCardsData[0];
+
     // Enemy gets a different random leader
     const availableEnemyLeaders = leaderCardsData.filter(l => l.id !== playerLeader.id);
     enemyLeader = availableEnemyLeaders[Math.floor(Math.random() * availableEnemyLeaders.length)] || leaderCardsData[1];
-    
+
     playerLeaderUsed = false;
     enemyLeaderUsed = false;
-    
+
     renderLeaderCards();
 }
 
@@ -346,7 +566,7 @@ function renderLeaderCards() {
         playerLeaderCard.querySelector('.leader-name').textContent = playerLeader.name;
         playerLeaderCard.querySelector('.leader-ability-text').textContent = getLeaderAbilityDescription(playerLeader.ability);
     }
-    
+
     // Enemy Leader
     const enemyLeaderCard = document.getElementById('enemy-leader-card');
     if (enemyLeaderCard && enemyLeader) {
@@ -381,21 +601,21 @@ function setupLeaders() {
 function activateLeader(who) {
     const leader = who === 'player' ? playerLeader : enemyLeader;
     const isUsed = who === 'player' ? playerLeaderUsed : enemyLeaderUsed;
-    
+
     if (!leader || isUsed) return;
-    
+
     console.log(`[Líder] ${who} ativou: ${leader.name}`);
-    
+
     // Execute ability
     executeLeaderAbility(leader.ability, who);
-    
+
     // Mark as used
     if (who === 'player') {
         playerLeaderUsed = true;
     } else {
         enemyLeaderUsed = true;
     }
-    
+
     updateLeaderVisuals();
     updateScore();
 }
@@ -407,7 +627,7 @@ function executeLeaderAbility(ability, who) {
             clearWeather();
             console.log(`[Líder] Clima limpo por ${who}!`);
             break;
-            
+
         case 'leader_scorch_siege':
             // Destrói a carta mais forte na fileira de Cerco inimiga
             const targetSide = who === 'player' ? 'opponent' : 'player';
@@ -446,13 +666,13 @@ function executeLeaderAbility(ability, who) {
                 }
             }
             break;
-            
+
         case 'leader_draw_card':
             // Compra 1 carta
             drawCard(who === 'player' ? 'player' : 'opponent', 1);
             console.log(`[Líder] ${who} comprou 1 carta!`);
             break;
-            
+
         case 'leader_boost_melee':
             // Adiciona +2 a todas unidades Melee do lado de quem ativou
             const meleeSide = who === 'player' ? 'player' : 'opponent';
@@ -476,7 +696,7 @@ function updateLeaderVisuals() {
     const enemySlot = document.getElementById('enemy-leader');
     const playerCard = document.getElementById('player-leader-card');
     const enemyCard = document.getElementById('enemy-leader-card');
-    
+
     // Player Leader
     if (playerSlot && playerCard) {
         if (playerLeaderUsed) {
@@ -486,7 +706,7 @@ function updateLeaderVisuals() {
         } else {
             playerSlot.classList.remove('used');
             playerCard.classList.remove('used');
-            
+
             // Show clickable indicator when it's player's turn
             if (!playerPassed && !isProcessingTurn) {
                 playerCard.classList.add('clickable', 'my-turn');
@@ -495,7 +715,7 @@ function updateLeaderVisuals() {
             }
         }
     }
-    
+
     // Enemy Leader
     if (enemySlot && enemyCard) {
         if (enemyLeaderUsed) {
@@ -511,9 +731,9 @@ function updateLeaderVisuals() {
 // IA: Decidir se deve usar o Líder
 function shouldEnemyUseLeader() {
     if (enemyLeaderUsed || !enemyLeader) return false;
-    
+
     const ability = enemyLeader.ability;
-    
+
     switch (ability) {
         case 'leader_clear_weather':
             // Usar se clima está afetando negativamente o inimigo
@@ -535,7 +755,7 @@ function shouldEnemyUseLeader() {
                 return affectedCount >= 2; // Usar se 2+ cartas estão nerfadas
             }
             return false;
-            
+
         case 'leader_scorch_siege':
             // Usar se jogador tem carta forte em siege
             const playerSiege = document.querySelector('.row.player[data-type="siege"] .cards-container');
@@ -545,11 +765,11 @@ function shouldEnemyUseLeader() {
                 return strong.length > 0;
             }
             return false;
-            
+
         case 'leader_draw_card':
             // Usar se está com poucas cartas na mão
             return enemyHand.length <= 3;
-            
+
         case 'leader_boost_melee':
             // Usar se tem 3+ cartas em melee
             const enemyMelee = document.querySelector('.row.opponent[data-type="melee"] .cards-container');
@@ -558,7 +778,7 @@ function shouldEnemyUseLeader() {
             }
             return false;
     }
-    
+
     return false;
 }
 
@@ -574,12 +794,12 @@ function setupControls() {
     if (passBtn) {
         passBtn.addEventListener('click', () => {
             if (playerPassed || isProcessingTurn) return;
-            
+
             playerPassed = true;
             passBtn.disabled = true;
             passBtn.textContent = "Passado";
             console.log("Jogador passou a vez.");
-            
+
             // Visual update
             document.querySelector('.player-side').classList.add('passed');
             updateTurnVisuals();
@@ -613,7 +833,7 @@ function createCardElement(card) {
     const el = document.createElement('div');
     el.classList.add('card');
     el.draggable = true;
-    
+
     // Data attributes
     el.dataset.id = card.id;
     el.dataset.type = card.type; // melee, ranged, siege
@@ -634,34 +854,34 @@ function createCardElement(card) {
     // ========================================
     // NOVA ESTRUTURA VISUAL DA CARTA
     // ========================================
-    
+
     // Imagem de fundo do personagem
     if (card.img) {
         el.style.backgroundImage = `url('${card.img}')`;
     }
-    
+
     // Overlay escuro para legibilidade
     const overlay = document.createElement('div');
     overlay.classList.add('card-overlay');
     el.appendChild(overlay);
-    
+
     // Badge de Força (canto superior esquerdo)
     const strengthBadge = document.createElement('div');
     // Visual badge for power (used by updateScore())
     strengthBadge.classList.add('card-strength-badge');
     strengthBadge.textContent = card.power;
     el.appendChild(strengthBadge);
-    
+
     // Container de informações (parte inferior)
     const infoContainer = document.createElement('div');
     infoContainer.classList.add('card-info-container');
-    
+
     // Nome da carta (banner amarelo)
     const nameDiv = document.createElement('div');
     nameDiv.classList.add('card-name');
     nameDiv.textContent = card.name;
     infoContainer.appendChild(nameDiv);
-    
+
     // Descrição/Habilidade (banner laranja)
     const descDiv = document.createElement('div');
     descDiv.classList.add('card-desc');
@@ -675,13 +895,13 @@ function createCardElement(card) {
         descDiv.textContent = card.type.charAt(0).toUpperCase() + card.type.slice(1);
     }
     infoContainer.appendChild(descDiv);
-    
+
     el.appendChild(infoContainer);
-    
+
     // Ícone da Fileira (canto inferior direito)
     const rowIconImg = document.createElement('img');
     rowIconImg.classList.add('card-row-icon-img');
-    
+
     // Determinar qual ícone usar
     let iconKey = card.type; // melee, ranged, siege
     if (card.row === 'all') {
@@ -698,7 +918,7 @@ function createCardElement(card) {
 
     // Drop Events for Decoy Interaction (Only if it's on the board)
     // We add these to ALL cards, but logic inside will filter
-    el.addEventListener('dragover', function(e) {
+    el.addEventListener('dragover', function (e) {
         const draggingCard = document.querySelector('.dragging');
         if (!draggingCard) return;
 
@@ -706,7 +926,7 @@ function createCardElement(card) {
         if (!isDecoy) return;
 
         const targetCard = e.currentTarget;
-        
+
         // Validate Target:
         // 1. Must be on Player Side (we can check parent row class)
         const row = targetCard.closest('.row');
@@ -724,11 +944,11 @@ function createCardElement(card) {
         targetCard.classList.add('valid-target');
     });
 
-    el.addEventListener('dragleave', function(e) {
+    el.addEventListener('dragleave', function (e) {
         e.currentTarget.classList.remove('valid-target');
     });
 
-    el.addEventListener('drop', function(e) {
+    el.addEventListener('drop', function (e) {
         const targetCard = e.currentTarget;
         targetCard.classList.remove('valid-target');
 
@@ -770,7 +990,7 @@ function createCardElement(card) {
         // 2. Place Decoy in Target's Spot
         // We want to insert the decoy exactly where the target is.
         // Since draggingCard is currently in the hand (or source), we move it.
-        
+
         // Remove target from DOM
         const parent = targetCard.parentNode;
         parent.insertBefore(draggingCard, targetCard);
@@ -779,7 +999,7 @@ function createCardElement(card) {
         // 3. Finalize Decoy State
         draggingCard.draggable = false;
         draggingCard.classList.remove('dragging');
-        
+
         // 4. Update Game State
         updateScore();
 
@@ -804,9 +1024,9 @@ function createCardElement(card) {
 // --- Card Drop Logic (for Decoy) ---
 
 // Deprecated named functions (logic moved inline to createCardElement)
-function cardDragOver(e) {}
-function cardDragLeave(e) {}
-function cardDrop(e) {}
+function cardDragOver(e) { }
+function cardDragLeave(e) { }
+function cardDrop(e) { }
 
 // --- Ability Logic ---
 
@@ -909,7 +1129,7 @@ function applyMedic(cardElement, currentRow) {
     }
 
     const cardToRevive = graveyard.splice(cardIndex, 1)[0];
-    
+
     console.log(`Médico ativado! Revivendo: ${cardToRevive.name}`);
 
     // Determine where to play the revived card
@@ -920,17 +1140,17 @@ function applyMedic(cardElement, currentRow) {
 
     if (targetContainer) {
         const newCardElement = createCardElement(cardToRevive);
-        
+
         // If it's enemy side, ensure it's not draggable
         if (!isPlayerSide) {
             newCardElement.draggable = false;
         } else {
             // If player revived it, it should be locked in place (played), not draggable back to hand
-            newCardElement.draggable = false; 
+            newCardElement.draggable = false;
         }
 
         targetContainer.appendChild(newCardElement);
-        
+
         // Trigger Ability of the revived card! (Chain Reaction)
         // Use setTimeout to allow DOM to update and visual effect to be distinct
         setTimeout(() => {
@@ -952,10 +1172,10 @@ function applyTightBond(row, name, basePower) {
 function applySpy(cardElement, currentRow) {
     const cardType = cardElement.dataset.type;
     const isPlayerSide = currentRow.classList.contains('player');
-    
+
     // Determine target side (Opposite of current)
     const targetSideClass = isPlayerSide ? 'opponent' : 'player';
-    
+
     // Find the corresponding row on the other side
     // Selector looks for .row.{targetSide}.{cardType} .cards-container
     const targetRowSelector = `.row.${targetSideClass}[data-type="${cardType}"] .cards-container`;
@@ -964,10 +1184,10 @@ function applySpy(cardElement, currentRow) {
     if (targetContainer) {
         // Move the card to the opponent's field
         targetContainer.appendChild(cardElement);
-        
+
         // Visual feedback for Spy (maybe an eye icon or color change)
         cardElement.classList.add('spy-card');
-        
+
         console.log(`Espião ativado! Carta movida para ${targetSideClass}.`);
 
         // Draw 1 card for the person who played the spy (Nerfed from 2)
@@ -1012,11 +1232,11 @@ function applyScorch(cardElement, currentRow) {
     const cardType = cardElement.dataset.type;
     const isPlayerSide = currentRow.classList.contains('player');
     const targetSideClass = isPlayerSide ? 'opponent' : 'player';
-    
+
     // Target the corresponding enemy row
     const targetRowSelector = `.row.${targetSideClass}[data-type="${cardType}"] .cards-container`;
     const targetContainer = document.querySelector(targetRowSelector);
-    
+
     if (!targetContainer) return;
 
     const enemyCards = Array.from(targetContainer.querySelectorAll('.card'));
@@ -1044,7 +1264,7 @@ function applyScorch(cardElement, currentRow) {
 
     if (targets.length > 0) {
         console.log(`Scorch ativado! Destruindo ${targets.length} cartas com força ${maxPower}.`);
-        
+
         targets.forEach(card => {
             card.classList.add('burning'); // Use new animation class
             // Remove after animation (0.8s defined in CSS)
@@ -1058,7 +1278,7 @@ function applyScorch(cardElement, currentRow) {
                     ability: card.dataset.ability,
                     isHero: card.dataset.isHero === "true"
                 };
-                
+
                 if (card.closest('.opponent-side')) {
                     enemyGraveyard.push(cardObj);
                 } else {
@@ -1081,11 +1301,11 @@ function updateScore() {
     let totalOpponent = 0;
 
     const allRows = document.querySelectorAll('.row');
-    
+
     allRows.forEach(row => {
         const rowType = row.dataset.type;
         const cards = Array.from(row.querySelectorAll('.card'));
-        
+
         // 1. Check Weather
         let isWeathered = false;
         if (rowType === 'melee' && activeWeather.frost) isWeathered = true;
@@ -1125,7 +1345,7 @@ function updateScore() {
             // Apply Bond Partner
             const partner = card.dataset.partner;
             if (!isHero && ability === 'bond_partner' && partner) {
-                 if (nameCounts[partner] && nameCounts[partner] > 0) {
+                if (nameCounts[partner] && nameCounts[partner] > 0) {
                     power *= 2;
                 }
             }
@@ -1147,7 +1367,7 @@ function updateScore() {
             } else {
                 badge.classList.remove('buffed', 'nerfed');
             }
-            
+
             // Update dataset for other logic (like Scorch) to use current power
             card.dataset.power = power;
 
@@ -1308,7 +1528,7 @@ function getBestRowForAgile() {
     // Preferência: fileira com menos clima ativo ou mais cartas aliadas para sinergia
     const rowTypes = ['melee', 'ranged', 'siege'];
     const weatherMap = { melee: 'frost', ranged: 'fog', siege: 'rain' };
-    
+
     // Priorizar fileira sem clima
     for (const type of rowTypes) {
         if (!activeWeather[weatherMap[type]]) {
@@ -1347,7 +1567,7 @@ function enemyTurn() {
     // ==========================================
     // REGRA 1: VERIFICAR SE DEVE PASSAR
     // ==========================================
-    
+
     // 1.1 - Mão vazia: forçar passar
     if (enemyHand.length === 0) {
         console.log("[IA] Sem cartas na mão. Passando.");
@@ -1372,7 +1592,7 @@ function enemyTurn() {
     // ==========================================
     // REGRA 2-6: AVALIAR PRIORIDADES DAS CARTAS
     // ==========================================
-    
+
     let bestCardIndex = -1;
     let maxPriority = -1;
     let bestDecoyTarget = null;
@@ -1409,7 +1629,7 @@ function enemyTurn() {
         // ------------------------------------------
         else if (ability === 'medic') {
             const validTargets = enemyGraveyard.filter(c => !c.isHero);
-            
+
             if (validTargets.length === 0) {
                 priority = 0; // ZERO se cemitério vazio
                 console.log(`[IA] Médico ${card.name}: Prioridade 0 (cemitério vazio)`);
@@ -1449,7 +1669,7 @@ function enemyTurn() {
         // ------------------------------------------
         else if (ability === 'decoy') {
             const targets = findDecoyTargets();
-            
+
             if (targets.length === 0) {
                 priority = 0; // NUNCA jogar sem alvo válido
                 console.log(`[IA] Decoy: Prioridade 0 (sem alvos válidos)`);
@@ -1462,13 +1682,13 @@ function enemyTurn() {
                     priority = 85; // Alta prioridade
                     decoyTarget = bestSpy.element;
                     console.log(`[IA] Decoy: Prioridade 85 (recolher espião do jogador: ${bestSpy.element.dataset.name})`);
-                } 
+                }
                 // Prioridade 2: Salvar carta forte (>= 6 poder base) afetada por clima
                 else {
-                    const strongWeakened = targets.filter(t => 
+                    const strongWeakened = targets.filter(t =>
                         t.basePower >= 6 && t.currentPower < t.basePower && !t.isSpy
                     );
-                    
+
                     if (strongWeakened.length > 0) {
                         const best = strongWeakened.reduce((a, b) => a.basePower > b.basePower ? a : b);
                         priority = 45 + best.basePower;
@@ -1477,10 +1697,10 @@ function enemyTurn() {
                     }
                     // Prioridade 3: Reutilizar Médico/Espião próprio
                     else {
-                        const reusable = targets.filter(t => 
+                        const reusable = targets.filter(t =>
                             (t.ability === 'medic' || t.ability === 'spy' || t.ability === 'spy_medic') && !t.isSpy
                         );
-                        
+
                         if (reusable.length > 0) {
                             const best = reusable[0];
                             priority = 40;
@@ -1511,7 +1731,7 @@ function enemyTurn() {
         else if (ability === 'scorch') {
             const strongestPlayer = findStrongestPlayerCard();
             const strongestEnemy = findStrongestEnemyCard();
-            
+
             // Só jogar se a carta mais forte for do JOGADOR (evitar fogo amigo)
             if (strongestPlayer.power > 0 && strongestPlayer.power > strongestEnemy.power) {
                 priority = 60 + strongestPlayer.power; // Quanto mais forte a carta, melhor
@@ -1551,7 +1771,7 @@ function enemyTurn() {
             } else {
                 // Unidades normais
                 priority = card.power;
-                
+
                 // Penalizar se a fileira está com clima
                 const rowType = card.row === 'all' ? getBestRowForAgile() : card.type;
                 const weatherMap = { melee: 'frost', ranged: 'fog', siege: 'rain' };
@@ -1561,7 +1781,7 @@ function enemyTurn() {
                 } else {
                     console.log(`[IA] ${card.name}: Prioridade ${priority}`);
                 }
-                
+
                 // Guardar row override para cartas Agile
                 if (card.row === 'all') {
                     rowOverride = rowType;
@@ -1609,7 +1829,7 @@ function enemyTurn() {
 
     const cardToPlay = enemyHand[bestCardIndex];
     console.log(`[IA] >>> Jogando: ${cardToPlay.name} (Prioridade: ${maxPriority})`);
-    
+
     // Remover da mão
     enemyHand.splice(bestCardIndex, 1);
     updateEnemyHandUI();
@@ -1619,7 +1839,7 @@ function enemyTurn() {
     // ------------------------------------------
     if (cardToPlay.ability === 'decoy' && bestDecoyTarget) {
         console.log(`[IA] Decoy ativado em: ${bestDecoyTarget.dataset.name}`);
-        
+
         // 1. Devolver alvo para a mão do inimigo
         const returnedCardObj = {
             id: bestDecoyTarget.dataset.id,
@@ -1637,11 +1857,11 @@ function enemyTurn() {
         // 2. Colocar Decoy no lugar
         const decoyElement = createCardElement(cardToPlay);
         decoyElement.draggable = false;
-        
+
         const parent = bestDecoyTarget.parentNode;
         parent.insertBefore(decoyElement, bestDecoyTarget);
         bestDecoyTarget.remove();
-        
+
         updateScore();
         try { audioManager.playSFX('card-place'); } catch (e) { console.warn('SFX failed', e); }
         return;
@@ -1651,7 +1871,7 @@ function enemyTurn() {
     // EXECUTAR JOGADA PADRÃO
     // ------------------------------------------
     let targetContainer = null;
-    
+
     if (cardToPlay.type === 'weather') {
         // Clima não vai para o tabuleiro, apenas ativa o efeito
         const cardElement = createCardElement(cardToPlay);
@@ -1666,19 +1886,19 @@ function enemyTurn() {
         if (cardToPlay.row === 'all') {
             rowType = bestRowOverride || getBestRowForAgile();
         }
-        
+
         targetContainer = document.querySelector(`.row.opponent[data-type="${rowType}"] .cards-container`);
-        
+
         if (targetContainer) {
             const cardElement = createCardElement(cardToPlay);
             cardElement.draggable = false;
             targetContainer.appendChild(cardElement);
-            
+
             // Ativar habilidade
             const row = targetContainer.closest('.row');
             triggerAbility(cardElement, row);
-                try { audioManager.playSFX('card-place'); } catch (e) { console.warn('SFX failed', e); }
-            
+            try { audioManager.playSFX('card-place'); } catch (e) { console.warn('SFX failed', e); }
+
             console.debug('[DEBUG enemyTurn] played card', { name: cardToPlay.name, type: cardToPlay.type, row: rowType });
 
             console.log(`[IA] Carta jogada: ${cardToPlay.name} na fileira ${rowType}`);
@@ -1700,7 +1920,7 @@ function passTurn(who) {
 function updateTurnVisuals() {
     const playerSide = document.querySelector('.player-side');
     const opponentSide = document.querySelector('.opponent-side');
-    
+
     if (!playerSide || !opponentSide) return;
 
     playerSide.classList.remove('active-turn');
@@ -1711,7 +1931,7 @@ function updateTurnVisuals() {
     } else if (!playerPassed) {
         playerSide.classList.add('active-turn');
     }
-    
+
     // Atualizar visuais dos líderes também
     updateLeaderVisuals();
 }
@@ -1760,7 +1980,7 @@ function endRound(winner) {
         playerWins++;
         message = "Você venceu a rodada!";
         updateGems("player", playerWins);
-        
+
         // ==========================================
         // PASSIVA DE FACÇÃO: ALFREDOLÂNDIA
         // "Reinos do Norte" - Compra 1 carta ao vencer rodada
@@ -1770,7 +1990,7 @@ function endRound(winner) {
             drawCard('player', 1);
             message += "\n🃏 Passiva de Facção: +1 carta!";
         }
-        
+
     } else if (winner === "opponent") {
         enemyWins++;
         message = "Oponente venceu a rodada!";
@@ -1801,11 +2021,11 @@ function showRoundMessage(message) {
     toast.className = 'round-toast';
     toast.innerHTML = `<span>${message.replace(/\n/g, '<br>')}</span>`;
     document.body.appendChild(toast);
-    
+
     setTimeout(() => {
         toast.classList.add('show');
     }, 100);
-    
+
     setTimeout(() => {
         toast.classList.remove('show');
         setTimeout(() => {
@@ -1822,11 +2042,11 @@ function showGameOverModal() {
     const icon = document.getElementById('modal-icon');
     const playerScore = document.getElementById('final-player-wins');
     const enemyScore = document.getElementById('final-enemy-wins');
-    
+
     // Atualizar placar
     playerScore.textContent = playerWins;
     enemyScore.textContent = enemyWins;
-    
+
     // Determinar resultado
     if (playerWins >= 2 && enemyWins >= 2) {
         title.textContent = "EMPATE!";
@@ -1846,14 +2066,14 @@ function showGameOverModal() {
         icon.textContent = "💀";
         try { audioManager.playSFX('switch'); } catch (e) { console.warn('SFX failed', e); }
     }
-    
+
     // Mostrar modal
     modal.classList.remove('hidden');
-    
+
     // Setup botão de jogar novamente
     const playAgainBtn = document.getElementById('play-again-btn');
     playAgainBtn.onclick = () => {
-        try { audioManager.playSFX('mouseclick'); } catch (e) {}
+        try { audioManager.playSFX('mouseclick'); } catch (e) { }
         modal.classList.add('hidden');
         resetGame();
     };
@@ -1861,7 +2081,7 @@ function showGameOverModal() {
 
 function resetGame() {
     console.log("=== REINICIANDO JOGO ===");
-    
+
     // 1. Resetar variáveis de estado
     playerWins = 0;
     enemyWins = 0;
@@ -1874,42 +2094,42 @@ function resetGame() {
     enemyHand = [];
     playerDeck = [];
     enemyDeck = [];
-    
+
     // 2. Resetar estado dos líderes
     playerLeaderUsed = false;
     enemyLeaderUsed = false;
-    
+
     // 3. Limpar tabuleiro
     const allRows = document.querySelectorAll('.row .cards-container');
     allRows.forEach(container => {
         container.innerHTML = '';
     });
-    
+
     // 4. Limpar mão do jogador
     const handContainer = document.querySelector('.hand-cards');
     if (handContainer) {
         handContainer.innerHTML = '';
     }
-    
+
     // 5. Resetar gemas visuais
     document.querySelectorAll('.gem').forEach(gem => {
         gem.classList.remove('active');
     });
-    
+
     // 6. Resetar visuais de "passed"
     document.querySelector('.player-side')?.classList.remove('passed');
     document.querySelector('.opponent-side')?.classList.remove('passed');
-    
+
     // 7. Resetar botão de passar
     const passBtn = document.getElementById('pass-button');
     if (passBtn) {
         passBtn.disabled = false;
         passBtn.textContent = "Passar Rodada";
     }
-    
+
     // 8. Resetar clima visual
     updateWeatherVisuals();
-    
+
     // 9. Reinicializar o jogo com o deck salvo
     if (typeof playerDeckIds !== 'undefined' && playerDeckIds.length > 0) {
         initializeGameWithDeck(playerDeckIds);
@@ -1917,7 +2137,7 @@ function resetGame() {
         // Fallback: se não tiver deck do builder, usa sistema antigo
         initializeGame();
     }
-    
+
     console.log("=== JOGO REINICIADO ===");
 }
 
@@ -1925,7 +2145,7 @@ function updateGems(who, count) {
     const containerId = who === "player" ? "player-gems" : "opponent-gems";
     const container = document.getElementById(containerId);
     const gems = container.querySelectorAll('.gem');
-    
+
     for (let i = 0; i < count; i++) {
         if (gems[i]) gems[i].classList.add('active');
     }
@@ -2004,7 +2224,7 @@ function dragStart(e) {
     if (e.target.dataset.ability === 'decoy') {
         const playerRows = document.querySelectorAll('.row.player .cards-container');
         let hasTarget = false;
-        
+
         playerRows.forEach(container => {
             const cards = Array.from(container.querySelectorAll('.card'));
             cards.forEach(c => {
@@ -2024,7 +2244,7 @@ function dragStart(e) {
     // Store card ID and Type in dataTransfer
     e.dataTransfer.setData('text/plain', e.target.dataset.id);
     e.dataTransfer.setData('card-type', e.target.dataset.type);
-    
+
     // Visual feedback
     e.target.classList.add('dragging');
 }
@@ -2090,7 +2310,7 @@ function drop(e) {
             if (cardType === 'weather') {
                 // Trigger Ability
                 triggerAbility(card, row);
-                
+
                 // Move to graveyard immediately (visual discard)
                 const cardObj = {
                     id: card.dataset.id,
@@ -2101,9 +2321,9 @@ function drop(e) {
                     isHero: card.dataset.isHero === "true"
                 };
                 playerGraveyard.push(cardObj);
-                
+
                 card.remove(); // Remove from hand/drag source
-                
+
                 // Update Score (Weather effect applied)
                 updateScore();
 
@@ -2124,7 +2344,7 @@ function drop(e) {
                 // Move card to the row's card container
                 const cardsContainer = row.querySelector('.cards-container');
                 cardsContainer.appendChild(card);
-                
+
                 // Disable drag for played card
                 card.draggable = false;
                 card.classList.remove('dragging');
@@ -2152,7 +2372,7 @@ function drop(e) {
                             isHero: card.dataset.isHero === "true"
                         };
                         playerGraveyard.push(cardObj);
-                        
+
                         // Remove from board
                         card.remove();
                         updateScore(); // Update again after removal

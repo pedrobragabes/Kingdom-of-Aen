@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kingdom of Aen - Gwent Clone</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
+
 <body>
 
     <!-- ============================================
@@ -109,6 +111,23 @@
             </div>
         </div>
 
+        <!-- Overlay de Mulligan (Fase de Troca de Cartas) -->
+        <div id="mulligan-overlay" class="mulligan-overlay hidden">
+            <div class="mulligan-content">
+                <div class="mulligan-header">
+                    <h2 class="mulligan-title">⚔️ Prepare suas Forças</h2>
+                    <p class="mulligan-subtitle">Clique em até <span id="redraw-count" class="redraw-count">2</span>
+                        cartas para trocá-las</p>
+                </div>
+                <div class="mulligan-cards" id="mulligan-cards">
+                    <!-- Cards renderizados via JS -->
+                </div>
+                <button id="mulligan-confirm-btn" class="mulligan-confirm-btn">
+                    <span>🗡️</span> Finalizar e Lutar
+                </button>
+            </div>
+        </div>
+
         <div class="game-container">
             <!-- Coluna de Líderes (Esquerda) -->
             <div class="leaders-column">
@@ -121,13 +140,13 @@
                     </div>
                     <div class="leader-used-overlay">USADO</div>
                 </div>
-                
+
                 <!-- Indicador de Deck -->
                 <div class="deck-indicator">
                     <div class="deck-icon">🃏</div>
                     <span id="player-deck-count">0</span>
                 </div>
-                
+
                 <!-- Líder do Jogador -->
                 <div class="leader-slot player-leader" id="player-leader">
                     <div class="leader-card" id="player-leader-card">
@@ -229,4 +248,5 @@
     <script src="js/deckbuilder.js"></script>
     <script src="js/script.js"></script>
 </body>
+
 </html>
