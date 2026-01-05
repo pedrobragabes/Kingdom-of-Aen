@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kingdom of Aen - Gwent Clone</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <!-- ============================================
+         CENA 1: DECK BUILDER
+         ============================================ -->
+    <div id="scene-builder" class="scene active">
+        <div class="builder-container">
+            <!-- Header do Builder -->
+            <header class="builder-header">
+                <h1 class="builder-title">⚔️ Kingdom of Aen</h1>
+                <p class="builder-subtitle">Monte seu exército para a batalha</p>
+            </header>
+
+            <!-- Área Principal -->
+            <div class="builder-main">
+                <!-- Coluna Esquerda: Coleção -->
+                <div class="builder-collection">
+                    <div class="builder-section-header">
+                        <h2>📚 Coleção Disponível</h2>
+                        <div class="filter-tabs">
+                            <button class="filter-btn active" data-filter="all">Todas</button>
+                            <button class="filter-btn" data-filter="melee">⚔️ Melee</button>
+                            <button class="filter-btn" data-filter="ranged">🏹 Ranged</button>
+                            <button class="filter-btn" data-filter="siege">🏰 Siege</button>
+                            <button class="filter-btn" data-filter="special">✨ Especiais</button>
+                        </div>
+                    </div>
+                    <div class="collection-grid" id="collection-grid">
+                        <!-- Cards renderizados via JS -->
+                    </div>
+                </div>
+
+                <!-- Coluna Direita: Meu Deck -->
+                <div class="builder-deck">
+                    <div class="builder-section-header">
+                        <h2>🛡️ Meu Deck</h2>
+                        <button class="clear-deck-btn" id="clear-deck-btn">🗑️ Limpar</button>
+                    </div>
+                    <div class="deck-grid" id="deck-grid">
+                        <!-- Cards do deck renderizados via JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer: Status e Botão Jogar -->
+            <footer class="builder-footer">
+                <div class="deck-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Total</span>
+                        <span class="stat-value" id="stat-total">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Unidades</span>
+                        <span class="stat-value" id="stat-units">0</span>
+                        <span class="stat-requirement">(mín. 22)</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Especiais</span>
+                        <span class="stat-value" id="stat-specials">0</span>
+                        <span class="stat-requirement">(máx. 10)</span>
+                    </div>
+                    <div class="stat-item stat-power">
+                        <span class="stat-label">Poder Total</span>
+                        <span class="stat-value" id="stat-power">0</span>
+                    </div>
+                </div>
+                <div class="builder-actions">
+                    <div class="validation-message" id="validation-message"></div>
+                    <button class="play-btn" id="start-game-btn" disabled>
+                        <span>⚔️</span> INICIAR BATALHA
+                    </button>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- ============================================
+         CENA 2: TABULEIRO DE BATALHA
+         ============================================ -->
+    <div id="scene-battle" class="scene">
+        <!-- Modal de Fim de Jogo -->
+        <div id="game-over-modal" class="modal-overlay hidden">
+            <div class="modal-content">
+                <div class="modal-icon" id="modal-icon">👑</div>
+                <h1 class="modal-title" id="modal-title">VITÓRIA!</h1>
+                <p class="modal-subtitle" id="modal-subtitle">Você dominou o campo de batalha!</p>
+                <div class="modal-score">
+                    <span class="score-label">Placar Final</span>
+                    <div class="score-values">
+                        <span class="player-final">Jogador: <strong id="final-player-wins">0</strong></span>
+                        <span class="vs">vs</span>
+                        <span class="enemy-final">Oponente: <strong id="final-enemy-wins">0</strong></span>
+                    </div>
+                </div>
+                <button id="play-again-btn" class="play-again-btn">
+                    <span>⚔️</span> Jogar Novamente
+                </button>
+                <button id="back-to-builder-btn" class="back-btn">
+                    🔙 Voltar ao Deck Builder
+                </button>
+            </div>
+        </div>
+
+        <!-- Overlay de Mulligan (Fase de Troca de Cartas) -->
+        <div id="mulligan-overlay" class="mulligan-overlay hidden">
+            <div class="mulligan-content">
+                <div class="mulligan-header">
+                    <h2 class="mulligan-title">⚔️ Prepare suas Forças</h2>
+                    <p class="mulligan-subtitle">Clique em até <span id="redraw-count" class="redraw-count">2</span>
+                        cartas para trocá-las</p>
+                </div>
+                <div class="mulligan-cards" id="mulligan-cards">
+                    <!-- Cards renderizados via JS -->
+                </div>
+                <button id="mulligan-confirm-btn" class="mulligan-confirm-btn">
+                    <span>🗡️</span> Finalizar e Lutar
+                </button>
+            </div>
+        </div>
+
+        <div class="game-container">
+            <!-- Coluna de Líderes (Esquerda) -->
+            <div class="leaders-column">
+                <!-- Líder do Oponente -->
+                <div class="leader-slot opponent-leader" id="enemy-leader">
+                    <div class="leader-card" id="enemy-leader-card">
+                        <div class="leader-img"></div>
+                        <div class="leader-name">Líder Inimigo</div>
+                        <div class="leader-ability-text">Habilidade</div>
+                    </div>
+                    <div class="leader-used-overlay">USADO</div>
+                </div>
+
+                <!-- Indicador de Deck -->
+                <div class="deck-indicator">
+                    <div class="deck-icon">🃏</div>
+                    <span id="player-deck-count">0</span>
+                </div>
+
+                <!-- Líder do Jogador -->
+                <div class="leader-slot player-leader" id="player-leader">
+                    <div class="leader-card" id="player-leader-card">
+                        <div class="leader-img"></div>
+                        <div class="leader-name">Líder</div>
+                        <div class="leader-ability-text">Habilidade</div>
+                    </div>
+                    <div class="leader-used-overlay">USADO</div>
+                </div>
+            </div>
+
+            <!-- Área Principal do Tabuleiro (Centro) -->
+            <div class="main-board">
+                <!-- Lado do Oponente (Topo) -->
+                <div class="opponent-side">
+                    <div class="opponent-hand-info">
+                        Cartas na Mão do Inimigo: <span id="enemy-hand-count">0</span>
+                    </div>
+                    <!-- Zona de Cerco Inimiga -->
+                    <div class="row siege opponent" data-type="siege">
+                        <div class="row-label">Siege (Opponent)</div>
+                        <div class="cards-container"></div>
+                        <div class="row-score">0</div>
+                    </div>
+                    <!-- Zona de Ataque à Distância Inimiga -->
+                    <div class="row ranged opponent" data-type="ranged">
+                        <div class="row-label">Ranged (Opponent)</div>
+                        <div class="cards-container"></div>
+                        <div class="row-score">0</div>
+                    </div>
+                    <!-- Zona Corpo a Corpo Inimiga -->
+                    <div class="row melee opponent" data-type="melee">
+                        <div class="row-label">Melee (Opponent)</div>
+                        <div class="cards-container"></div>
+                        <div class="row-score">0</div>
+                    </div>
+                </div>
+
+                <!-- Divisor Central -->
+                <div class="field-divider"></div>
+
+                <!-- Lado do Jogador -->
+                <div class="player-side">
+                    <!-- Zona Corpo a Corpo Jogador -->
+                    <div class="row melee player" data-type="melee">
+                        <div class="row-label">Melee (Player)</div>
+                        <div class="cards-container"></div>
+                        <div class="row-score">0</div>
+                    </div>
+                    <!-- Zona de Ataque à Distância Jogador -->
+                    <div class="row ranged player" data-type="ranged">
+                        <div class="row-label">Ranged (Player)</div>
+                        <div class="cards-container"></div>
+                        <div class="row-score">0</div>
+                    </div>
+                    <!-- Zona de Cerco Jogador -->
+                    <div class="row siege player" data-type="siege">
+                        <div class="row-label">Siege (Player)</div>
+                        <div class="cards-container"></div>
+                        <div class="row-score">0</div>
+                    </div>
+                </div>
+
+                <!-- Área de Controles (Mão + Placar) -->
+                <div class="controls-area">
+                    <!-- Mão do Jogador -->
+                    <div class="player-hand">
+                        <div class="hand-label">Mão do Jogador</div>
+                        <div class="hand-cards"></div>
+                    </div>
+
+                    <!-- Placar -->
+                    <div class="scoreboard">
+                        <div class="score-title">Placar</div>
+                        <div class="score-details">
+                            <div class="score-row opponent-score-row">
+                                <div class="gems-container" id="opponent-gems">
+                                    <div class="gem"></div>
+                                    <div class="gem"></div>
+                                </div>
+                                <span>Opponent: <span id="score-total-opponent">0</span></span>
+                            </div>
+                            <div class="score-row player-score-row">
+                                <div class="gems-container" id="player-gems">
+                                    <div class="gem"></div>
+                                    <div class="gem"></div>
+                                </div>
+                                <span>Player: <span id="score-total-player">0</span></span>
+                            </div>
+                        </div>
+                        <button id="pass-button" class="pass-btn">Passar Rodada</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Utils e Data -->
+    <script src="js/utils/helpers.js"></script>
+    <script src="js/data/cards.js"></script>
+
+    <!-- Core -->
+    <script src="js/core/state.js"></script>
+    <script src="js/core/audio.js"></script>
+    <script src="js/core/abilities.js"></script>
+    <script src="js/core/leaders.js"></script>
+    <script src="js/core/ai.js"></script>
+    <script src="js/core/engine.js"></script>
+
+    <!-- UI -->
+    <script src="js/ui/render.js"></script>
+    <script src="js/ui/interactions.js"></script>
+    <script src="js/ui/mulligan.js"></script>
+
+    <!-- Features -->
+    <script src="js/deckbuilder.js"></script>
+
+    <!-- Inicialização -->
+    <script src="js/main.js"></script>
+</body>
+
+</html>
