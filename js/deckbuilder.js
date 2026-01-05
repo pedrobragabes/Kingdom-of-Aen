@@ -1,3 +1,7 @@
+import { CARD_COLLECTION } from './data/cards.js';
+import { getCardById, countDeckComposition, validateDeck, audioManager } from './utils/helpers.js';
+import { initializeGameWithDeck } from './core/engine.js';
+
 // ============================================
 // DECK BUILDER - Kingdom of Aen
 // ============================================
