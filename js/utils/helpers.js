@@ -1,36 +1,57 @@
+/**
+ * @fileoverview Utilitários e constantes globais para o jogo Kingdom of Aen
+ * @module utils/helpers
+ * @author Kingdom of Aen Team
+ */
+
+// ============================================
+// ===       ÍCONES DAS FILEIRAS           ===
+// ============================================
+
+/**
+ * Mapeamento de tipos de fileira para seus ícones
+ * @constant {Object.<string, string>}
+ */
+const ROW_ICONS = {
+    melee: 'img/icons/icon-melee.png',
+    ranged: 'img/icons/icon-ranged.png',
+    siege: 'img/icons/icon-siege.png',
+    agile: 'img/icons/icon-ranged.png' // Agile usa ícone de ranged por padrão
+};
+
+// ============================================
+// ===       DESCRIÇÕES DAS HABILIDADES    ===
+// ============================================
+
+/**
+ * Descrições legíveis das habilidades das cartas
+ * @constant {Object.<string, string>}
+ */
+const ABILITY_DESCRIPTIONS = {
+    spy: 'Espião',
+    spy_medic: 'Espião Médico',
+    medic: 'Médico',
+    bond_partner: 'Vínculo',
+    tight_bond: 'Vínculo Forte',
+    decoy: 'Espantalho',
+    scorch: 'Queimar',
+    weather_frost: 'Geada',
+    weather_fog: 'Névoa',
+    weather_rain: 'Chuva',
+    weather_clear: 'Limpar Clima'
+};
+
 // ============================================
 // ===       FUNÇÕES UTILITÁRIAS           ===
 // ============================================
 
 /**
- * Mapeamento de ícones por tipo de fileira
- */
-const ROW_ICONS = {
-    'melee': 'img/icons/icon-melee.png',
-    'ranged': 'img/icons/icon-ranged.png',
-    'siege': 'img/icons/icon-siege.png',
-    'agile': 'img/icons/icon-agile.png'
-};
-
-/**
- * Mapeamento de habilidades para descrições curtas
- */
-const ABILITY_DESCRIPTIONS = {
-    'bond_partner': 'Dobra força com parceiro',
-    'spy': 'Espião: Compra 2 cartas',
-    'spy_medic': 'Espião: Compra 2 cartas',
-    'medic': 'Revive uma carta',
-    'scorch': 'Queima a mais forte',
-    'decoy': 'Retorna carta à mão',
-    'hero': 'Imune a efeitos',
-    'weather': 'Aplica clima',
-    'clear_weather': 'Limpa todo clima'
-};
-
-/**
  * Embaralha um array usando o algoritmo Fisher-Yates
  * @param {Array} array - Array a ser embaralhado
- * @returns {Array} - Novo array embaralhado
+ * @returns {Array} Novo array embaralhado (não modifica o original)
+ * @example
+ * const deck = [1, 2, 3, 4, 5];
+ * const shuffled = shuffleArray(deck);
  */
 function shuffleArray(array) {
     const shuffled = [...array];
@@ -40,3 +61,9 @@ function shuffleArray(array) {
     }
     return shuffled;
 }
+
+// ============================================
+// ===       EXPORTS (Futuros ES6 Modules) ===
+// ============================================
+// Quando migrar para ES6 Modules, descomentar:
+// export { ROW_ICONS, ABILITY_DESCRIPTIONS, shuffleArray };

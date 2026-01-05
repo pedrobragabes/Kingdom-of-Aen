@@ -1,131 +1,167 @@
+/**
+ * @fileoverview Gerenciador de áudio para o jogo Kingdom of Aen
+ * @module core/audio
+ * @author Kingdom of Aen Team
+ */
+
 // ============================================
-// ===       AUDIO MANAGER                 ===
+// ===       CLASSE AUDIOMANAGER           ===
 // ============================================
 
+/**
+ * Gerenciador de áudio para música de fundo e efeitos sonoros
+ * @class
+ */
 class AudioManager {
+    /**
+     * Cria uma nova instância do AudioManager
+     * @param {string} [basePath='audio/'] - Caminho base para os arquivos de áudio
+     */
     constructor(basePath = 'audio/') {
-        this.basePath = basePath.endsWith('/') ? basePath : basePath + '/';
+        /** @type {string} Caminho base dos arquivos de áudio */
+        this.basePath = basePath;
 
-        // Music (use provided background filename)
-        this.musicFile = this.basePath + 'music_bg.mp3';
-        this.music = new Audio(this.musicFile);
-        this.music.loop = true;
-        this.music.volume = 0.4;
-        this.isMusicPlaying = false;
-        this.sfxMuted = false;
-        this.musicMuted = false;
-        this.storageKey = 'kingdom_audio_muted';
+        /** @type {HTMLAudioElement|null} Elemento de áudio da música de fundo */
+        this.bgMusic = null;
 
-        // Load persisted mute state
-        try {
-            const saved = localStorage.getItem(this.storageKey);
-            if (saved === 'true') {
-                this.sfxMuted = true;
-                this.musicMuted = true;
-                this.music.muted = true;
-            }
-        } catch (e) { /* ignore */ }
+        /** @type {boolean} Se os efeitos sonoros estão mutados */
+        this.sfxMuted = this._loadMuteState();
 
-        // SFX sets
+        /** @type {boolean} Se a música está mutada */
+        this.musicMuted = this.sfxMuted;
+
+        /**
+         * Efeitos sonoros disponíveis
+         * @type {Object.<string, string[]>}
+         */
         this.sfx = {
-            'card-place': [
-                this.basePath + 'card-place-1.ogg',
-                this.basePath + 'card-place-2.ogg',
-                this.basePath + 'card-place-3.ogg',
-                this.basePath + 'card-place-4.ogg'
-            ],
-            'card-slide': [this.basePath + 'card-slide-1.ogg'],
-            'shuffle': [this.basePath + 'card-shuffle.ogg'],
-            'mouseclick': [this.basePath + 'mouseclick1.ogg'],
-            'switch': [this.basePath + 'switch4.ogg']
+            'card-place': ['card-place-1.ogg', 'card-place-2.ogg', 'card-place-3.ogg', 'card-place-4.ogg'],
+            'card-slide': ['card-slide-1.ogg', 'card-slide-2.ogg'],
+            'card-fan': ['card-fan-1.ogg', 'card-fan-2.ogg'],
+            'shuffle': ['card-shuffle.ogg'],
+            'dice': ['dice-throw-3.ogg', 'die-throw-3.ogg'],
+            'switch': ['switch4.ogg'],
+            'mouseclick': ['mouseclick1.ogg'],
+            'shove': ['card-shove-1.ogg']
         };
 
-        // Preload Audio elements for low-latency
-        this._preloaded = {};
+        /** @type {Object.<string, HTMLAudioElement[]>} Cache de áudios pré-carregados */
+        this.preloaded = {};
+
         this._preloadAll();
     }
 
+    /**
+     * Carrega o estado de mute do localStorage
+     * @private
+     * @returns {boolean}
+     */
+    _loadMuteState() {
+        try {
+            return localStorage.getItem('audioMuted') === 'true';
+        } catch (e) {
+            return false;
+        }
+    }
+
+    /**
+     * Salva o estado de mute no localStorage
+     * @private
+     * @param {boolean} muted
+     */
+    _saveMuteState(muted) {
+        try {
+            localStorage.setItem('audioMuted', muted ? 'true' : 'false');
+        } catch (e) {
+            // Ignore storage errors
+        }
+    }
+
+    /**
+     * Pré-carrega todos os efeitos sonoros
+     * @private
+     */
     _preloadAll() {
-        // Preload music (do not autoplay)
-        try {
-            this.music.preload = 'auto';
-            this.music.load();
-        } catch (e) { /* ignore */ }
-
-        // Preload SFX (create Audio objects but don't reuse for playing to avoid locking)
-        Object.keys(this.sfx).forEach(key => {
-            this._preloaded[key] = this.sfx[key].map(src => {
-                try {
-                    const a = new Audio(src);
-                    a.preload = 'auto';
-                    a.load();
-                    return src;
-                } catch (e) {
-                    return src; // keep src even if Audio creation fails now
-                }
+        for (const key in this.sfx) {
+            this.preloaded[key] = this.sfx[key].map(file => {
+                const audio = new Audio(this.basePath + file);
+                audio.preload = 'auto';
+                audio.volume = 0.5;
+                return audio;
             });
+        }
+    }
+
+    /**
+     * Inicia a música de fundo
+     * @param {string} [track='music_bg.mp3'] - Nome do arquivo da música
+     */
+    playMusic(track = 'music_bg.mp3') {
+        if (this.bgMusic) return;
+
+        this.bgMusic = new Audio(this.basePath + track);
+        this.bgMusic.loop = true;
+        this.bgMusic.volume = this.musicMuted ? 0 : 0.3;
+        this.bgMusic.play().catch(e => {
+            console.warn('Autoplay blocked. Music will play after user interaction.', e);
         });
     }
 
-    playMusic() {
-        if (this.isMusicPlaying) return;
-        if (this.musicMuted) this.music.muted = true;
-        this.music.play().then(() => {
-            this.isMusicPlaying = true;
-        }).catch(err => {
-            console.warn('[AudioManager] playMusic blocked:', err);
-        });
-    }
-
+    /**
+     * Para a música de fundo
+     */
     stopMusic() {
-        try {
-            this.music.pause();
-            this.music.currentTime = 0;
-            this.isMusicPlaying = false;
-        } catch (e) {
-            console.warn('[AudioManager] stopMusic error', e);
+        if (this.bgMusic) {
+            this.bgMusic.pause();
+            this.bgMusic.currentTime = 0;
+            this.bgMusic = null;
         }
     }
 
-    setMute(muted) {
-        this.sfxMuted = !!muted;
-        this.musicMuted = !!muted;
-        try {
-            this.music.muted = !!muted;
-            localStorage.setItem(this.storageKey, muted ? 'true' : 'false');
-        } catch (e) { /* ignore */ }
-    }
-
-    toggleMute() {
-        const newState = !this.sfxMuted;
-        this.setMute(newState);
-        return newState;
-    }
-
-    _randomFrom(key) {
-        const arr = this._preloaded[key] || this.sfx[key] || [];
-        if (!arr || arr.length === 0) return null;
-        return arr[Math.floor(Math.random() * arr.length)];
-    }
-
+    /**
+     * Toca um efeito sonoro
+     * @param {string} type - Tipo do SFX (ex: 'card-place', 'shuffle')
+     */
     playSFX(type) {
-        try {
-            if (this.sfxMuted) return;
-            const src = this._randomFrom(type);
-            if (!src) return;
-            // Create a fresh Audio to allow overlapping
-            const sfx = new Audio(src);
-            sfx.volume = 1.0;
-            sfx.muted = this.sfxMuted;
-            sfx.play().catch(err => {
-                // Silently ignore play errors (autoplay policies, etc.)
-                console.warn('[AudioManager] SFX play blocked', err);
-            });
-        } catch (e) {
-            console.warn('[AudioManager] playSFX error', e);
+        if (this.sfxMuted) return;
+
+        const sounds = this.preloaded[type];
+        if (!sounds || sounds.length === 0) return;
+
+        const sound = sounds[Math.floor(Math.random() * sounds.length)];
+        const clone = sound.cloneNode();
+        clone.volume = 0.5;
+        clone.play().catch(() => { });
+    }
+
+    /**
+     * Alterna o estado de mute de todo o áudio
+     * @returns {boolean} Novo estado de mute
+     */
+    toggleMute() {
+        this.sfxMuted = !this.sfxMuted;
+        this.musicMuted = this.sfxMuted;
+
+        if (this.bgMusic) {
+            this.bgMusic.volume = this.musicMuted ? 0 : 0.3;
         }
+
+        this._saveMuteState(this.sfxMuted);
+        return this.sfxMuted;
     }
 }
 
-// Create global instance
-const audioManager = new AudioManager('audio');
+// ============================================
+// ===       INSTÂNCIA GLOBAL              ===
+// ============================================
+
+/**
+ * Instância global do gerenciador de áudio
+ * @type {AudioManager}
+ */
+const audioManager = new AudioManager();
+
+// ============================================
+// ===       EXPORTS (Futuros ES6 Modules) ===
+// ============================================
+// export { AudioManager, audioManager };

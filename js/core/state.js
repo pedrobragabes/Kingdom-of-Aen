@@ -1,49 +1,162 @@
+/**
+ * @fileoverview Estado global do jogo Kingdom of Aen
+ * @module core/state
+ * @author Kingdom of Aen Team
+ */
+
 // ============================================
-// ===       ESTADO GLOBAL DO JOGO         ===
+// ===       ESTADO DO CLIMA               ===
 // ============================================
 
-// Game State - Clima
+/**
+ * Estado atual do clima no tabuleiro
+ * @type {{frost: boolean, fog: boolean, rain: boolean}}
+ */
 let activeWeather = { frost: false, fog: false, rain: false };
 
-// Game State - Mãos e Turnos
+// ============================================
+// ===       ESTADO DAS MÃOS               ===
+// ============================================
+
+/**
+ * Cartas na mão do inimigo
+ * @type {Array<Object>}
+ */
 let enemyHand = [];
+
+/**
+ * Deck do jogador (cartas restantes)
+ * @type {Array<Object>}
+ */
+let playerDeck = [];
+
+/**
+ * Deck do inimigo (cartas restantes)
+ * @type {Array<Object>}
+ */
+let enemyDeck = [];
+
+// ============================================
+// ===       ESTADO DOS TURNOS             ===
+// ============================================
+
+/**
+ * Se o jogador passou a vez
+ * @type {boolean}
+ */
 let playerPassed = false;
+
+/**
+ * Se o inimigo passou a vez
+ * @type {boolean}
+ */
 let enemyPassed = false;
+
+/**
+ * Se está processando um turno (aguardando animações/IA)
+ * @type {boolean}
+ */
 let isProcessingTurn = false;
 
-// Game State - Vitórias e Cemitérios
+// ============================================
+// ===       ESTADO DAS VITÓRIAS           ===
+// ============================================
+
+/**
+ * Número de rodadas vencidas pelo jogador
+ * @type {number}
+ */
 let playerWins = 0;
+
+/**
+ * Número de rodadas vencidas pelo inimigo
+ * @type {number}
+ */
 let enemyWins = 0;
+
+// ============================================
+// ===       CEMITÉRIOS                    ===
+// ============================================
+
+/**
+ * Cartas no cemitério do jogador
+ * @type {Array<Object>}
+ */
 let playerGraveyard = [];
+
+/**
+ * Cartas no cemitério do inimigo
+ * @type {Array<Object>}
+ */
 let enemyGraveyard = [];
 
-// Deck State
-let playerDeck = []; // Deck embaralhado do jogador (objetos de carta)
-let enemyDeck = [];  // Deck embaralhado do inimigo (objetos de carta)
+// ============================================
+// ===       LÍDERES                       ===
+// ============================================
 
-// Leader State
+/**
+ * Líder do jogador
+ * @type {Object|null}
+ */
 let playerLeader = null;
+
+/**
+ * Líder do inimigo
+ * @type {Object|null}
+ */
 let enemyLeader = null;
+
+/**
+ * Se o líder do jogador já foi usado
+ * @type {boolean}
+ */
 let playerLeaderUsed = false;
+
+/**
+ * Se o líder do inimigo já foi usado
+ * @type {boolean}
+ */
 let enemyLeaderUsed = false;
 
-// Mulligan State
-let mulliganHand = []; // Mão temporária durante o mulligan
-let mulliganRedraws = 2; // Trocas restantes
+// ============================================
+// ===       MULLIGAN                      ===
+// ============================================
 
-// Faction Passive State
-const PLAYER_FACTION = 'alfredolandia'; // "Reinos do Norte" - Compra carta ao vencer rodada
+/**
+ * Mão temporária durante a fase de mulligan
+ * @type {Array<Object>}
+ */
+let mulliganHand = [];
+
+/**
+ * Trocas restantes durante o mulligan
+ * @type {number}
+ */
+let mulliganRedraws = 2;
+
+// ============================================
+// ===       FACÇÃO                        ===
+// ============================================
+
+/**
+ * Facção do jogador (afeta passivas)
+ * @constant {string}
+ */
+const PLAYER_FACTION = 'alfredolandia';
 
 // ============================================
 // ===       FUNÇÕES DE RESET              ===
 // ============================================
 
 /**
- * Reseta o estado do jogo para valores iniciais
+ * Reseta todo o estado do jogo para valores iniciais
+ * @returns {void}
  */
 function resetGameState() {
     activeWeather = { frost: false, fog: false, rain: false };
     enemyHand = [];
+    playerDeck = [];
+    enemyDeck = [];
     playerPassed = false;
     enemyPassed = false;
     isProcessingTurn = false;
@@ -51,8 +164,6 @@ function resetGameState() {
     enemyWins = 0;
     playerGraveyard = [];
     enemyGraveyard = [];
-    playerDeck = [];
-    enemyDeck = [];
     playerLeader = null;
     enemyLeader = null;
     playerLeaderUsed = false;
@@ -62,7 +173,8 @@ function resetGameState() {
 }
 
 /**
- * Reseta apenas o estado de uma rodada (mantém vitórias e líderes)
+ * Reseta apenas o estado da rodada (mantém vitórias e cemitérios)
+ * @returns {void}
  */
 function resetRoundState() {
     activeWeather = { frost: false, fog: false, rain: false };
@@ -70,3 +182,9 @@ function resetRoundState() {
     enemyPassed = false;
     isProcessingTurn = false;
 }
+
+// ============================================
+// ===       EXPORTS (Futuros ES6 Modules) ===
+// ============================================
+// Quando migrar para ES6 Modules, exportar o estado como objeto
+// export { activeWeather, enemyHand, playerDeck, ... };
