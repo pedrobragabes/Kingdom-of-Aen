@@ -269,6 +269,15 @@ startBattle()             // Inicia a batalha
 
 ## 📊 Histórico de Melhorias
 
+### ✅ Versão 2.1.0 (14/01/2026 - Atual)
+1. **Melhorias de Design (HD+)**:
+   - Suporte a monitores largos (>1600px) com layout limitado a 90%
+   - Aumento de tamanho de cartas, ícones e fontes em alta resolução
+   - Prevenção de achatamento (`flex-shrink: 0`) nas cartas
+2. **Refatoração Modular**:
+   - Migração para padrão IIFE com namespace `KoA`
+   - Melhora na organização do código e compatibilidade `file://`
+
 ### ✅ Versão 1.1.0 (14/01/2026)
 1. ~~**Espaçamento de cartas quebrado**~~ → Corrigido CSS de `.cards-container`
 2. ~~**Duplicação de código**~~ → `shuffleArray` removida de `cards.js`
@@ -292,6 +301,7 @@ O CSS agora inclui media queries para:
 
 | Breakpoint | Dispositivo | Mudanças |
 |------------|-------------|----------|
+| `≥1600px` | Monitores Largos | Layout 90%, fontes/ícones maiores |
 | `≤1024px` | Tablets | Cartas menores, layout compacto |
 | `≤768px` | Mobile | Layout vertical, líderes ocultos |
 | `≤480px` | Mobile pequeno | Cartas muito compactas |

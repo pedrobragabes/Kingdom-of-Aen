@@ -2279,3 +2279,195 @@ img {
         overflow-y: auto;
     }
 }
+
+/* ============================================
+   MELHORIAS DE DESIGN PARA TELAS GRANDES (HD+)
+   ============================================ */
+
+/* Ajuste para telas acima de 1600px (Full HD e maiores) */
+@media screen and (min-width: 1600px) {
+
+    /* 1. Limitar a largura do jogo para centralizar e não esticar */
+    .game-container {
+        max-width: 90%;
+        /* Ocupa 90% da tela */
+        margin: 0 auto;
+        /* Centraliza na tela */
+        border-left: 2px solid #333;
+        border-right: 2px solid #333;
+        box-shadow: 0 0 100px rgba(0, 0, 0, 0.9);
+        /* Sombra para destacar */
+        position: relative;
+    }
+
+    /* Fundo escuro nas laterais para preencher o vazio */
+    body {
+        background-color: #0b0b0b;
+    }
+
+    /* 2. Aumentar o tamanho das cartas para não parecerem pequenas */
+    .card {
+        width: 110px;
+        /* Aumento significativo (padrão é ~85px) */
+        height: 158px;
+        /* Proporção mantida */
+        font-size: 1rem;
+        /* Fonte base maior */
+    }
+
+    /* Badge de força maior */
+    .card-strength-badge {
+        width: 32px;
+        height: 32px;
+        font-size: 1.1rem;
+        line-height: 30px;
+        /* Centralizar verticalmente */
+        border-width: 2px;
+    }
+
+    /* Nome da carta mais legível */
+    .card-name {
+        font-size: 0.75rem;
+        padding: 5px 2px;
+        bottom: 25px;
+        /* Ajuste posicional */
+    }
+
+    /* Descrição da habilidade melhorada */
+    .card-desc {
+        font-size: 0.65rem;
+        bottom: 5px;
+    }
+
+    /* 3. Ícones e Placar Maiores */
+
+    /* Ícone da fileira (Espada, Arco, Catapulta) */
+    .row-icon-img {
+        width: 40px;
+        height: 40px;
+        opacity: 0.8;
+    }
+
+    /* Badge de pontuação da fileira */
+    .row-score-badge {
+        width: 50px;
+        height: 50px;
+        font-size: 1.5rem;
+        line-height: 48px;
+    }
+
+    /* Títulos das fileiras */
+    .row-label {
+        width: 140px;
+        font-size: 0.9rem;
+    }
+
+    /* Placar Total */
+    .total-score {
+        width: 60px;
+        height: 60px;
+        font-size: 1.8rem;
+        line-height: 58px;
+    }
+
+    /* Área do jogador (pontuação total) */
+    .player-info-area {
+        gap: 15px;
+    }
+
+    .player-name {
+        font-size: 1.1rem;
+    }
+
+    .faction-name {
+        font-size: 0.8rem;
+    }
+
+    /* Gemas de vitória maiores */
+    .gem {
+        width: 16px;
+        height: 16px;
+    }
+
+    /* 4. Deck Builder em Tela Grande */
+    .builder-container {
+        max-width: 1600px;
+        margin: 0 auto;
+    }
+
+    .collection-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 20px;
+    }
+
+    .deck-grid {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 15px;
+    }
+
+    /* Cartas no builder maiores */
+    .builder-card,
+    .deck-card {
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+    }
+
+    .builder-card .card-strength-badge {
+        width: 28px;
+        height: 28px;
+        font-size: 0.9rem;
+    }
+
+    .builder-card .card-name {
+        font-size: 0.65rem;
+        padding: 6px;
+        bottom: 20px;
+    }
+
+    /* Botão de Passar Rodada mais imponente */
+    .pass-btn {
+        padding: 15px 30px;
+        font-size: 1.1rem;
+        letter-spacing: 1px;
+    }
+}
+
+/* ============================================
+   PREVENÇÃO DE ACHATAMENTO (FLATTENING)
+   ============================================ */
+
+/* Garante que as cartas nunca sejam esmagadas pelo flexbox */
+.card,
+.builder-card,
+.deck-card,
+.collection-grid>div,
+.hand-cards>div {
+    flex-shrink: 0 !important;
+}
+
+/* Permitir scroll horizontal na mão se tiver muitas cartas, em vez de esmagar */
+.hand-cards {
+    overflow-x: auto;
+    justify-content: center;
+    /* Tenta centralizar, mas permite scroll se passar */
+    padding-bottom: 20px;
+    /* Espaço para scrollbar */
+}
+
+/* Estilo da scrollbar para ficar bonita */
+.hand-cards::-webkit-scrollbar {
+    height: 8px;
+}
+
+.hand-cards::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+}
+
+.hand-cards::-webkit-scrollbar-thumb {
+    background: var(--gold-dark);
+    border-radius: 4px;
+}
+
+.hand-cards::-webkit-scrollbar-thumb:hover {
+    background: var(--gold);
+}
