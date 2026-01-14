@@ -1,0 +1,38 @@
+{
+    "name": "kingdom-of-aen",
+    "version": "1.0.0",
+    "description": "Jogo de cartas estratégico inspirado no Gwent",
+    "main": "js/main.js",
+    "type": "module",
+    "scripts": {
+        "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+        "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
+        "dev": "npx serve .",
+        "lint": "eslint js/"
+    },
+    "keywords": [
+        "card-game",
+        "gwent",
+        "strategy",
+        "tcg"
+    ],
+    "author": "Pedro Braga, Ramon",
+    "license": "MIT",
+    "devDependencies": {
+        "jest": "^29.7.0",
+        "jest-environment-jsdom": "^29.7.0",
+        "@jest/globals": "^29.7.0"
+    },
+    "jest": {
+        "testEnvironment": "jsdom",
+        "moduleFileExtensions": [
+            "js",
+            "mjs"
+        ],
+        "transform": {},
+        "testMatch": [
+            "**/tests/**/*.test.js"
+        ],
+        "verbose": true
+    }
+}
