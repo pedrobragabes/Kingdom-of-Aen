@@ -2,189 +2,164 @@
  * @fileoverview Estado global do jogo Kingdom of Aen
  * @module core/state
  * @author Kingdom of Aen Team
+ * 
+ * Padrão IIFE para encapsulamento sem precisar de servidor HTTP
  */
 
-// ============================================
-// ===       ESTADO DO CLIMA               ===
-// ============================================
+window.KoA = window.KoA || {};
 
-/**
- * Estado atual do clima no tabuleiro
- * @type {{frost: boolean, fog: boolean, rain: boolean}}
- */
-let activeWeather = { frost: false, fog: false, rain: false };
+(function (KoA) {
+    'use strict';
 
-// ============================================
-// ===       ESTADO DAS MÃOS               ===
-// ============================================
+    // ============================================
+    // ===       ESTADO DO JOGO                ===
+    // ============================================
 
-/**
- * Cartas na mão do inimigo
- * @type {Array<Object>}
- */
-let enemyHand = [];
+    // Clima
+    let activeWeather = { frost: false, fog: false, rain: false };
 
-/**
- * Deck do jogador (cartas restantes)
- * @type {Array<Object>}
- */
-let playerDeck = [];
+    // Mãos e Decks
+    let enemyHand = [];
+    let playerDeck = [];
+    let enemyDeck = [];
 
-/**
- * Deck do inimigo (cartas restantes)
- * @type {Array<Object>}
- */
-let enemyDeck = [];
+    // Turnos
+    let playerPassed = false;
+    let enemyPassed = false;
+    let isProcessingTurn = false;
 
-// ============================================
-// ===       ESTADO DOS TURNOS             ===
-// ============================================
+    // Vitórias
+    let playerWins = 0;
+    let enemyWins = 0;
 
-/**
- * Se o jogador passou a vez
- * @type {boolean}
- */
-let playerPassed = false;
+    // Cemitérios
+    let playerGraveyard = [];
+    let enemyGraveyard = [];
 
-/**
- * Se o inimigo passou a vez
- * @type {boolean}
- */
-let enemyPassed = false;
+    // Líderes
+    let playerLeader = null;
+    let enemyLeader = null;
+    let playerLeaderUsed = false;
+    let enemyLeaderUsed = false;
 
-/**
- * Se está processando um turno (aguardando animações/IA)
- * @type {boolean}
- */
-let isProcessingTurn = false;
+    // Mulligan
+    let mulliganHand = [];
+    let mulliganRedraws = 2;
 
-// ============================================
-// ===       ESTADO DAS VITÓRIAS           ===
-// ============================================
+    // Facção
+    const PLAYER_FACTION = 'alfredolandia';
 
-/**
- * Número de rodadas vencidas pelo jogador
- * @type {number}
- */
-let playerWins = 0;
+    // ============================================
+    // ===       FUNÇÕES DE RESET              ===
+    // ============================================
 
-/**
- * Número de rodadas vencidas pelo inimigo
- * @type {number}
- */
-let enemyWins = 0;
+    function resetGameState() {
+        activeWeather = { frost: false, fog: false, rain: false };
+        enemyHand = [];
+        playerDeck = [];
+        enemyDeck = [];
+        playerPassed = false;
+        enemyPassed = false;
+        isProcessingTurn = false;
+        playerWins = 0;
+        enemyWins = 0;
+        playerGraveyard = [];
+        enemyGraveyard = [];
+        playerLeader = null;
+        enemyLeader = null;
+        playerLeaderUsed = false;
+        enemyLeaderUsed = false;
+        mulliganHand = [];
+        mulliganRedraws = 2;
 
-// ============================================
-// ===       CEMITÉRIOS                    ===
-// ============================================
+        // Atualiza os globais
+        syncToGlobal();
+    }
 
-/**
- * Cartas no cemitério do jogador
- * @type {Array<Object>}
- */
-let playerGraveyard = [];
+    function resetRoundState() {
+        activeWeather = { frost: false, fog: false, rain: false };
+        playerPassed = false;
+        enemyPassed = false;
+        isProcessingTurn = false;
 
-/**
- * Cartas no cemitério do inimigo
- * @type {Array<Object>}
- */
-let enemyGraveyard = [];
+        // Atualiza os globais
+        window.activeWeather = activeWeather;
+        window.playerPassed = playerPassed;
+        window.enemyPassed = enemyPassed;
+        window.isProcessingTurn = isProcessingTurn;
+    }
 
-// ============================================
-// ===       LÍDERES                       ===
-// ============================================
+    function syncToGlobal() {
+        window.activeWeather = activeWeather;
+        window.enemyHand = enemyHand;
+        window.playerDeck = playerDeck;
+        window.enemyDeck = enemyDeck;
+        window.playerPassed = playerPassed;
+        window.enemyPassed = enemyPassed;
+        window.isProcessingTurn = isProcessingTurn;
+        window.playerWins = playerWins;
+        window.enemyWins = enemyWins;
+        window.playerGraveyard = playerGraveyard;
+        window.enemyGraveyard = enemyGraveyard;
+        window.playerLeader = playerLeader;
+        window.enemyLeader = enemyLeader;
+        window.playerLeaderUsed = playerLeaderUsed;
+        window.enemyLeaderUsed = enemyLeaderUsed;
+        window.mulliganHand = mulliganHand;
+        window.mulliganRedraws = mulliganRedraws;
+    }
 
-/**
- * Líder do jogador
- * @type {Object|null}
- */
-let playerLeader = null;
+    // ============================================
+    // ===       EXPORTS PARA NAMESPACE         ===
+    // ============================================
 
-/**
- * Líder do inimigo
- * @type {Object|null}
- */
-let enemyLeader = null;
+    KoA.state = {
+        get activeWeather() { return activeWeather; },
+        set activeWeather(val) { activeWeather = val; window.activeWeather = val; },
+        get enemyHand() { return enemyHand; },
+        set enemyHand(val) { enemyHand = val; window.enemyHand = val; },
+        get playerDeck() { return playerDeck; },
+        set playerDeck(val) { playerDeck = val; window.playerDeck = val; },
+        get enemyDeck() { return enemyDeck; },
+        set enemyDeck(val) { enemyDeck = val; window.enemyDeck = val; },
+        get playerPassed() { return playerPassed; },
+        set playerPassed(val) { playerPassed = val; window.playerPassed = val; },
+        get enemyPassed() { return enemyPassed; },
+        set enemyPassed(val) { enemyPassed = val; window.enemyPassed = val; },
+        get isProcessingTurn() { return isProcessingTurn; },
+        set isProcessingTurn(val) { isProcessingTurn = val; window.isProcessingTurn = val; },
+        get playerWins() { return playerWins; },
+        set playerWins(val) { playerWins = val; window.playerWins = val; },
+        get enemyWins() { return enemyWins; },
+        set enemyWins(val) { enemyWins = val; window.enemyWins = val; },
+        get playerGraveyard() { return playerGraveyard; },
+        set playerGraveyard(val) { playerGraveyard = val; window.playerGraveyard = val; },
+        get enemyGraveyard() { return enemyGraveyard; },
+        set enemyGraveyard(val) { enemyGraveyard = val; window.enemyGraveyard = val; },
+        get playerLeader() { return playerLeader; },
+        set playerLeader(val) { playerLeader = val; window.playerLeader = val; },
+        get enemyLeader() { return enemyLeader; },
+        set enemyLeader(val) { enemyLeader = val; window.enemyLeader = val; },
+        get playerLeaderUsed() { return playerLeaderUsed; },
+        set playerLeaderUsed(val) { playerLeaderUsed = val; window.playerLeaderUsed = val; },
+        get enemyLeaderUsed() { return enemyLeaderUsed; },
+        set enemyLeaderUsed(val) { enemyLeaderUsed = val; window.enemyLeaderUsed = val; },
+        get mulliganHand() { return mulliganHand; },
+        set mulliganHand(val) { mulliganHand = val; window.mulliganHand = val; },
+        get mulliganRedraws() { return mulliganRedraws; },
+        set mulliganRedraws(val) { mulliganRedraws = val; window.mulliganRedraws = val; }
+    };
 
-/**
- * Se o líder do jogador já foi usado
- * @type {boolean}
- */
-let playerLeaderUsed = false;
+    KoA.PLAYER_FACTION = PLAYER_FACTION;
+    KoA.resetGameState = resetGameState;
+    KoA.resetRoundState = resetRoundState;
 
-/**
- * Se o líder do inimigo já foi usado
- * @type {boolean}
- */
-let enemyLeaderUsed = false;
+    // Expõe globalmente para compatibilidade
+    window.PLAYER_FACTION = PLAYER_FACTION;
+    window.resetGameState = resetGameState;
+    window.resetRoundState = resetRoundState;
 
-// ============================================
-// ===       MULLIGAN                      ===
-// ============================================
+    // Inicializa os globais
+    syncToGlobal();
 
-/**
- * Mão temporária durante a fase de mulligan
- * @type {Array<Object>}
- */
-let mulliganHand = [];
-
-/**
- * Trocas restantes durante o mulligan
- * @type {number}
- */
-let mulliganRedraws = 2;
-
-// ============================================
-// ===       FACÇÃO                        ===
-// ============================================
-
-/**
- * Facção do jogador (afeta passivas)
- * @constant {string}
- */
-const PLAYER_FACTION = 'alfredolandia';
-
-// ============================================
-// ===       FUNÇÕES DE RESET              ===
-// ============================================
-
-/**
- * Reseta todo o estado do jogo para valores iniciais
- * @returns {void}
- */
-function resetGameState() {
-    activeWeather = { frost: false, fog: false, rain: false };
-    enemyHand = [];
-    playerDeck = [];
-    enemyDeck = [];
-    playerPassed = false;
-    enemyPassed = false;
-    isProcessingTurn = false;
-    playerWins = 0;
-    enemyWins = 0;
-    playerGraveyard = [];
-    enemyGraveyard = [];
-    playerLeader = null;
-    enemyLeader = null;
-    playerLeaderUsed = false;
-    enemyLeaderUsed = false;
-    mulliganHand = [];
-    mulliganRedraws = 2;
-}
-
-/**
- * Reseta apenas o estado da rodada (mantém vitórias e cemitérios)
- * @returns {void}
- */
-function resetRoundState() {
-    activeWeather = { frost: false, fog: false, rain: false };
-    playerPassed = false;
-    enemyPassed = false;
-    isProcessingTurn = false;
-}
-
-// ============================================
-// ===       EXPORTS (Futuros ES6 Modules) ===
-// ============================================
-// Quando migrar para ES6 Modules, exportar o estado como objeto
-// export { activeWeather, enemyHand, playerDeck, ... };
+})(window.KoA);
