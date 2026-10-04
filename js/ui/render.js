@@ -3,7 +3,7 @@ import {
   GAME_SIDES,
   calculateGameScore,
 } from "../domain/game-state.js";
-import { ABILITY_DESCRIPTIONS, ROW_ICONS } from "../utils/helpers.js";
+import { getCardDescription, ROW_ICONS, ROW_LABELS } from "../utils/helpers.js";
 import {
   activateHandCard,
   dragEnd,
@@ -58,6 +58,8 @@ export function renderGameState(state) {
     "score-total-opponent": scores.totalOpponent,
     "enemy-hand-count": state.players.opponent.hand.length,
     "player-deck-count": state.players.player.deck.length,
+    "player-round-wins": state.players.player.wins,
+    "opponent-round-wins": state.players.opponent.wins,
   };
   Object.entries(totals).forEach(([id, value]) => {
     const element = document.getElementById(id);
@@ -81,8 +83,22 @@ export function renderGameState(state) {
   if (passButton) {
     passButton.disabled = state.processing || state.players.player.passed;
     passButton.textContent = state.players.player.passed
-      ? "Passado"
+      ? "Rodada passada"
       : "Passar Rodada";
+  }
+
+  const turnStatus = document.getElementById("turn-status");
+  if (turnStatus) {
+    turnStatus.textContent =
+      state.players.player.wins >= 2 || state.players.opponent.wins >= 2
+        ? "Partida encerrada. Consulte o resultado."
+        : state.players.player.passed
+          ? "Você passou a rodada. Aguardando o oponente."
+          : state.processing
+            ? "Turno do oponente. Aguarde a jogada."
+            : state.players.opponent.passed
+              ? "O oponente passou. Você pode jogar ou passar a rodada."
+              : "Seu turno. Selecione uma carta e a fileira correspondente.";
   }
 
   renderGems("player", state.players.player.wins);
@@ -112,7 +128,7 @@ export function createCardElement(card) {
   el.draggable = true;
   el.setAttribute(
     "aria-label",
-    `${card.name}, ${card.power} pontos, ${card.type}`,
+    `${card.name}, ${card.power} pontos, ${ROW_LABELS[card.row === "all" ? "agile" : card.type]}`,
   );
   el.setAttribute("aria-pressed", String(isCardSelected(card.instanceId)));
   el.addEventListener("click", activateHandCard);
@@ -163,16 +179,7 @@ export function createCardElement(card) {
   // Descrição/Habilidade
   const descDiv = document.createElement("div");
   descDiv.classList.add("card-desc");
-  if (card.ability && card.ability !== "none") {
-    let descText = ABILITY_DESCRIPTIONS[card.ability] || "";
-    if (card.ability === "bond_partner" && card.partner) {
-      descText = `Bond: ${card.partner}`;
-    }
-    descDiv.textContent = descText;
-  } else {
-    descDiv.textContent =
-      card.type.charAt(0).toUpperCase() + card.type.slice(1);
-  }
+  descDiv.textContent = getCardDescription(card);
   infoContainer.appendChild(descDiv);
 
   el.appendChild(infoContainer);
@@ -186,7 +193,7 @@ export function createCardElement(card) {
     iconKey = "agile";
   }
   rowIconImg.src = ROW_ICONS[iconKey] || ROW_ICONS["melee"];
-  rowIconImg.alt = `Ícone ${iconKey}`;
+  rowIconImg.alt = "";
   rowIconImg.draggable = false;
   el.appendChild(rowIconImg);
 

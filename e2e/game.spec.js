@@ -5,7 +5,7 @@ import { CARD_COLLECTION } from "../js/data/cards.js";
 
 const ids = CARD_COLLECTION.slice(0, 22).map((card) => card.id);
 
-async function checkCriticalAccessibility(page, testInfo, phase) {
+async function checkAccessibility(page, testInfo, phase) {
   const result = await new AxeBuilder({ page }).analyze();
   const path = testInfo.outputPath(`accessibility-${phase}.json`);
   await writeFile(path, JSON.stringify(result.violations, null, 2));
@@ -13,10 +13,12 @@ async function checkCriticalAccessibility(page, testInfo, phase) {
     path,
     contentType: "application/json",
   });
-  expect(
-    result.violations.filter((violation) => violation.impact === "critical"),
-  ).toEqual([]);
+  expect(result.violations).toEqual([]);
 }
+
+test.beforeEach(async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+});
 
 test("builder, mulligan, duas rodadas e reinício funcionam por teclado", async ({
   page,
@@ -47,15 +49,19 @@ test("builder, mulligan, duas rodadas e reinício funcionam por teclado", async 
     fullPage: true,
     animations: "disabled",
   });
-  await checkCriticalAccessibility(page, testInfo, "builder");
+  await checkAccessibility(page, testInfo, "builder");
   await page.locator("#start-game-btn").focus();
   await page.keyboard.press("Enter");
   const mulligan = page.locator("#mulligan-overlay");
   await expect(mulligan).toBeVisible();
   await expect(page.locator("#mulligan-confirm-btn")).toBeFocused();
-  await checkCriticalAccessibility(page, testInfo, "mulligan");
+  await checkAccessibility(page, testInfo, "mulligan");
+  await page.keyboard.press("Tab");
+  await expect(page.locator("#mulligan-cards")).toBeFocused();
   await page.keyboard.press("Tab");
   await expect(page.locator("#mulligan-cards button").first()).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  await expect(page.locator("#mulligan-cards")).toBeFocused();
   await page.keyboard.press("Shift+Tab");
   await expect(page.locator("#mulligan-confirm-btn")).toBeFocused();
   await page.locator("#mulligan-cards button").first().press("Enter");
@@ -65,6 +71,12 @@ test("builder, mulligan, duas rodadas e reinício funcionam por teclado", async 
   ).toBeVisible();
   await page.locator("#mulligan-cards button").last().press("Space");
   await expect(page.locator("#redraw-count")).toHaveText("0");
+  await expect(page.locator("#mulligan-cards button.swapped")).toHaveCount(2);
+  await expect(page.locator("#mulligan-cards button:disabled")).toHaveCount(10);
+  await expect(
+    page.locator("#mulligan-overlay [data-game-feedback]"),
+  ).toContainText("0 trocas restantes");
+  await checkAccessibility(page, testInfo, "mulligan-swapped");
   await page.locator("#mulligan-confirm-btn").press("Enter");
   await expect(mulligan).toBeHidden();
   await expect(page.locator(".hand-cards .card")).toHaveCount(10);
@@ -76,17 +88,32 @@ test("builder, mulligan, duas rodadas e reinício funcionam por teclado", async 
   if (testInfo.project.name === "desktop") {
     await expect(page.locator("#pass-button")).toBeInViewport({ ratio: 1 });
   }
-  await checkCriticalAccessibility(page, testInfo, "battle");
+  await expect(page.locator("#turn-status")).toContainText("Seu turno");
+  await checkAccessibility(page, testInfo, "battle");
   await page.clock.install();
-  const handCard = page.locator(".hand-cards .card").first();
+  const handCard = page
+    .locator('.hand-cards .card:not([data-agile="true"])')
+    .first();
   const row = await handCard.getAttribute("data-type");
+  const wrongRow = row === "melee" ? "ranged" : "melee";
   await handCard.press("Enter");
+  await page.locator(`.row.player[data-type="${wrongRow}"]`).press("Enter");
+  await expect(page.locator("#battle-feedback")).toBeVisible();
+  await expect(page.locator("#battle-feedback")).toContainText(
+    "deve ser jogada na fileira",
+  );
+  await expect(handCard).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".hand-cards .card")).toHaveCount(10);
+  await checkAccessibility(page, testInfo, "invalid-row");
   await page.locator(`.row.player[data-type="${row}"]`).press("Enter");
   await expect(page.locator(".hand-cards .card")).toHaveCount(9);
   await expect(page.locator(".player-side .cards-container .card")).toHaveCount(
     1,
   );
   await page.clock.runFor(3000);
+  await expect(page.locator("#turn-status")).toContainText(
+    /Seu turno|O oponente passou/,
+  );
   await expect(page.locator("#pass-button")).toBeEnabled();
   await page.locator("#pass-button").press("Enter");
   await page.clock.runFor(35_000);
@@ -97,6 +124,16 @@ test("builder, mulligan, duas rodadas e reinício funcionam por teclado", async 
   await page.locator("#pass-button").press("Enter");
   await page.clock.runFor(35_000);
   await expect(page.locator("#game-over-modal")).toBeVisible();
+  expect(
+    await page
+      .locator("#player-round-wins, #opponent-round-wins")
+      .allTextContents(),
+  ).toContain("2");
+  await checkAccessibility(page, testInfo, "game-over");
+  await page.screenshot({
+    path: testInfo.outputPath("game-over.png"),
+    fullPage: true,
+  });
   await page.locator("#play-again-btn").press("Enter");
   await page.clock.runFor(32);
   await expect(mulligan).toBeVisible();
@@ -117,6 +154,61 @@ test("builder, mulligan, duas rodadas e reinício funcionam por teclado", async 
   await page.clock.runFor(60_000);
   await expect(page.locator("#game-over-modal")).toBeHidden();
   expect(errors).toEqual([]);
+});
+
+test("baralho vazio, coleção esgotada e limpeza têm instruções e estados textuais", async ({
+  page,
+}, testInfo) => {
+  await page.goto("/");
+  await expect(page.locator("#deck-grid .empty-state")).toContainText(
+    "pelo menos 22 unidades",
+  );
+  await expect(page.locator("#start-game-btn")).toBeDisabled();
+  await expect(
+    page.locator('#collection-grid [data-card-id="adr14no_1"] .card-name'),
+  ).toHaveText("Adriano");
+  await checkAccessibility(page, testInfo, "empty-deck");
+  await page.evaluate(
+    (deck) =>
+      localStorage.setItem("kingdomOfAen_playerDeck", JSON.stringify(deck)),
+    CARD_COLLECTION.map((card) => card.id),
+  );
+  await page.reload();
+  await expect(page.locator("#collection-grid .in-deck-label")).toHaveCount(
+    CARD_COLLECTION.length,
+  );
+  await expect(
+    page.locator("#collection-grid .builder-card").first(),
+  ).toHaveAttribute("aria-disabled", "true");
+  await page.locator('[data-filter="available"]').click();
+  await expect(page.locator('[data-filter="available"]')).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await expect(page.locator("#collection-grid .empty-state")).toContainText(
+    "Todas as cartas já estão no baralho",
+  );
+  await checkAccessibility(page, testInfo, "empty-collection");
+  await page.locator("#deck-grid .deck-card").first().click();
+  await expect(page.locator("#collection-grid .builder-card")).toHaveCount(1);
+  await expect(page.locator("#stat-total")).toHaveText(
+    String(CARD_COLLECTION.length - 1),
+  );
+  await page.locator("#clear-deck-btn").click();
+  await expect(page.locator("#builder-feedback")).toBeVisible();
+  await expect(page.locator("#builder-feedback")).toContainText(
+    "confirmar a limpeza do baralho",
+  );
+  await page.locator("#clear-deck-btn").click();
+  await expect(page.locator("#stat-total")).toHaveText("0");
+  await expect(page.locator("#collection-grid .builder-card")).toHaveCount(
+    CARD_COLLECTION.length,
+  );
+  await expect(page.locator("#deck-grid .empty-state")).toBeVisible();
+  await expect(page.locator("#builder-feedback")).toContainText(
+    "Baralho limpo",
+  );
+  await checkAccessibility(page, testInfo, "cleared-deck");
 });
 
 test("layout mantém coleção, deck, controles e overlays acessíveis em retrato e paisagem", async ({

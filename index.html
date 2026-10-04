@@ -3,265 +3,331 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Kingdom of Aen - Gwent Clone</title>
+    <title>Kingdom of Aen — Jogo de cartas</title>
     <link rel="stylesheet" href="css/style.css" />
     <link rel="stylesheet" href="css/responsive.css" />
   </head>
 
   <body>
-    <!-- ============================================
+    <main>
+      <!-- ============================================
          CENA 1: DECK BUILDER
          ============================================ -->
-    <div id="scene-builder" class="scene active">
-      <div class="builder-container">
-        <!-- Header do Builder -->
-        <header class="builder-header">
-          <h1 class="builder-title">⚔️ Kingdom of Aen</h1>
-          <p class="builder-subtitle">Monte seu exército para a batalha</p>
-        </header>
+      <div id="scene-builder" class="scene active">
+        <div class="builder-container">
+          <!-- Header do Builder -->
+          <header class="builder-header">
+            <h1 class="builder-title">⚔️ Kingdom of Aen</h1>
+            <p class="builder-subtitle">Monte seu exército para a batalha</p>
+            <p
+              id="builder-feedback"
+              class="game-feedback"
+              data-game-feedback
+            ></p>
+          </header>
 
-        <!-- Área Principal -->
-        <div class="builder-main">
-          <!-- Coluna Esquerda: Coleção -->
-          <div class="builder-collection">
-            <div class="builder-section-header">
-              <h2>📚 Coleção Disponível</h2>
-              <div class="filter-tabs">
-                <button class="filter-btn active" data-filter="all">
-                  Todas
-                </button>
-                <button class="filter-btn" data-filter="melee">⚔️ Melee</button>
-                <button class="filter-btn" data-filter="ranged">
-                  🏹 Ranged
-                </button>
-                <button class="filter-btn" data-filter="siege">🏰 Siege</button>
+          <!-- Área Principal -->
+          <div class="builder-main">
+            <!-- Coluna Esquerda: Coleção -->
+            <div class="builder-collection">
+              <div class="builder-section-header">
+                <h2>📚 Coleção Disponível</h2>
+                <div class="filter-tabs">
+                  <button
+                    class="filter-btn active"
+                    data-filter="all"
+                    aria-pressed="true"
+                  >
+                    Todas
+                  </button>
+                  <button
+                    class="filter-btn"
+                    data-filter="available"
+                    aria-pressed="false"
+                  >
+                    Disponíveis
+                  </button>
+                  <button
+                    class="filter-btn"
+                    data-filter="melee"
+                    aria-pressed="false"
+                  >
+                    ⚔️ Corpo a corpo
+                  </button>
+                  <button
+                    class="filter-btn"
+                    data-filter="ranged"
+                    aria-pressed="false"
+                  >
+                    🏹 À distância
+                  </button>
+                  <button
+                    class="filter-btn"
+                    data-filter="siege"
+                    aria-pressed="false"
+                  >
+                    🏰 Cerco
+                  </button>
+                </div>
+              </div>
+              <div class="collection-grid" id="collection-grid">
+                <!-- Cards renderizados via JS -->
               </div>
             </div>
-            <div class="collection-grid" id="collection-grid">
-              <!-- Cards renderizados via JS -->
+
+            <!-- Coluna Direita: Meu Deck -->
+            <div class="builder-deck">
+              <div class="builder-section-header">
+                <h2>🛡️ Meu baralho</h2>
+                <button class="clear-deck-btn" id="clear-deck-btn">
+                  🗑️ Limpar
+                </button>
+              </div>
+              <div class="deck-grid" id="deck-grid">
+                <!-- Cards do deck renderizados via JS -->
+              </div>
             </div>
           </div>
 
-          <!-- Coluna Direita: Meu Deck -->
-          <div class="builder-deck">
-            <div class="builder-section-header">
-              <h2>🛡️ Meu Deck</h2>
-              <button class="clear-deck-btn" id="clear-deck-btn">
-                🗑️ Limpar
+          <!-- Footer: Status e Botão Jogar -->
+          <footer class="builder-footer">
+            <div class="deck-stats">
+              <div class="stat-item">
+                <span class="stat-label">Total</span>
+                <span class="stat-value" id="stat-total">0</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Unidades</span>
+                <span class="stat-value" id="stat-units">0</span>
+                <span class="stat-requirement">(mín. 22)</span>
+              </div>
+              <div class="stat-item stat-power">
+                <span class="stat-label">Poder Total</span>
+                <span class="stat-value" id="stat-power">0</span>
+              </div>
+            </div>
+            <div class="builder-actions">
+              <div class="validation-message" id="validation-message"></div>
+              <button class="play-btn" id="start-game-btn" disabled>
+                <span>⚔️</span> INICIAR BATALHA
               </button>
             </div>
-            <div class="deck-grid" id="deck-grid">
-              <!-- Cards do deck renderizados via JS -->
-            </div>
-          </div>
+          </footer>
         </div>
-
-        <!-- Footer: Status e Botão Jogar -->
-        <footer class="builder-footer">
-          <div class="deck-stats">
-            <div class="stat-item">
-              <span class="stat-label">Total</span>
-              <span class="stat-value" id="stat-total">0</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Unidades</span>
-              <span class="stat-value" id="stat-units">0</span>
-              <span class="stat-requirement">(mín. 22)</span>
-            </div>
-            <div class="stat-item stat-power">
-              <span class="stat-label">Poder Total</span>
-              <span class="stat-value" id="stat-power">0</span>
-            </div>
-          </div>
-          <div class="builder-actions">
-            <div class="validation-message" id="validation-message"></div>
-            <button class="play-btn" id="start-game-btn" disabled>
-              <span>⚔️</span> INICIAR BATALHA
-            </button>
-          </div>
-        </footer>
       </div>
-    </div>
 
-    <!-- ============================================
+      <!-- ============================================
          CENA 2: TABULEIRO DE BATALHA
          ============================================ -->
-    <div id="scene-battle" class="scene">
-      <!-- Modal de Fim de Jogo -->
-      <div
-        id="game-over-modal"
-        class="modal-overlay hidden"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="modal-title"
-        tabindex="-1"
-      >
-        <div class="modal-content">
-          <div class="modal-icon" id="modal-icon">👑</div>
-          <h1 class="modal-title" id="modal-title">VITÓRIA!</h1>
-          <p class="modal-subtitle" id="modal-subtitle">
-            Você dominou o campo de batalha!
-          </p>
-          <div class="modal-score">
-            <span class="score-label">Placar Final</span>
-            <div class="score-values">
-              <span class="player-final"
-                >Jogador: <strong id="final-player-wins">0</strong></span
-              >
-              <span class="vs">vs</span>
-              <span class="enemy-final"
-                >Oponente: <strong id="final-enemy-wins">0</strong></span
-              >
-            </div>
-          </div>
-          <button id="play-again-btn" class="play-again-btn">
-            <span>⚔️</span> Jogar Novamente
-          </button>
-          <button id="back-to-builder-btn" class="back-btn">
-            🔙 Voltar ao Deck Builder
-          </button>
-        </div>
-      </div>
-
-      <!-- Overlay de Mulligan (Fase de Troca de Cartas) -->
-      <div
-        id="mulligan-overlay"
-        class="mulligan-overlay hidden"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="mulligan-title"
-        tabindex="-1"
-      >
-        <div class="mulligan-content">
-          <div class="mulligan-header">
-            <h2 class="mulligan-title" id="mulligan-title">
-              ⚔️ Prepare suas Forças
-            </h2>
-            <p class="mulligan-subtitle">
-              Clique em até
-              <span id="redraw-count" class="redraw-count">2</span> cartas para
-              trocá-las
+      <div id="scene-battle" class="scene">
+        <h1 class="sr-only">Kingdom of Aen — Batalha</h1>
+        <!-- Modal de Fim de Jogo -->
+        <div
+          id="game-over-modal"
+          class="modal-overlay hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modal-title"
+          tabindex="-1"
+        >
+          <div class="modal-content">
+            <div class="modal-icon" id="modal-icon">👑</div>
+            <h1 class="modal-title" id="modal-title">VITÓRIA!</h1>
+            <p class="modal-subtitle" id="modal-subtitle">
+              Você dominou o campo de batalha!
             </p>
-          </div>
-          <div class="mulligan-cards" id="mulligan-cards">
-            <!-- Cards renderizados via JS -->
-          </div>
-          <button id="mulligan-confirm-btn" class="mulligan-confirm-btn">
-            <span>🗡️</span> Finalizar e Lutar
-          </button>
-        </div>
-      </div>
-
-      <div class="game-container">
-        <!-- Área Principal do Tabuleiro (Centro) -->
-        <div class="main-board">
-          <!-- Lado do Oponente (Topo) -->
-          <div class="opponent-side">
-            <div class="opponent-hand-info">
-              Cartas na Mão do Inimigo: <span id="enemy-hand-count">0</span>
-            </div>
-            <!-- Zona de Cerco Inimiga -->
-            <div class="row siege opponent" data-type="siege">
-              <div class="row-label">Siege (Opponent)</div>
-              <div class="cards-container"></div>
-              <div class="row-score">0</div>
-            </div>
-            <!-- Zona de Ataque à Distância Inimiga -->
-            <div class="row ranged opponent" data-type="ranged">
-              <div class="row-label">Ranged (Opponent)</div>
-              <div class="cards-container"></div>
-              <div class="row-score">0</div>
-            </div>
-            <!-- Zona Corpo a Corpo Inimiga -->
-            <div class="row melee opponent" data-type="melee">
-              <div class="row-label">Melee (Opponent)</div>
-              <div class="cards-container"></div>
-              <div class="row-score">0</div>
-            </div>
-          </div>
-
-          <!-- Divisor Central -->
-          <div class="field-divider"></div>
-
-          <!-- Lado do Jogador -->
-          <div class="player-side">
-            <!-- Zona Corpo a Corpo Jogador -->
-            <div
-              class="row melee player"
-              data-type="melee"
-              role="button"
-              tabindex="0"
-              aria-label="Jogar na fileira corpo a corpo"
-            >
-              <div class="row-label">Melee (Player)</div>
-              <div class="cards-container"></div>
-              <div class="row-score">0</div>
-            </div>
-            <!-- Zona de Ataque à Distância Jogador -->
-            <div
-              class="row ranged player"
-              data-type="ranged"
-              role="button"
-              tabindex="0"
-              aria-label="Jogar na fileira de longo alcance"
-            >
-              <div class="row-label">Ranged (Player)</div>
-              <div class="cards-container"></div>
-              <div class="row-score">0</div>
-            </div>
-            <!-- Zona de Cerco Jogador -->
-            <div
-              class="row siege player"
-              data-type="siege"
-              role="button"
-              tabindex="0"
-              aria-label="Jogar na fileira de cerco"
-            >
-              <div class="row-label">Siege (Player)</div>
-              <div class="cards-container"></div>
-              <div class="row-score">0</div>
-            </div>
-          </div>
-
-          <!-- Área de Controles (Mão + Placar) -->
-          <div class="controls-area">
-            <!-- Mão do Jogador -->
-            <div class="player-hand">
-              <div class="hand-label">Mão do Jogador</div>
-              <div class="hand-cards"></div>
-            </div>
-
-            <!-- Placar -->
-            <div class="scoreboard">
-              <div class="deck-indicator" aria-label="Cartas restantes no deck">
-                <span class="deck-icon">🃏</span>
-                <span id="player-deck-count">0</span>
+            <div class="modal-score">
+              <span class="score-label">Placar Final</span>
+              <div class="score-values">
+                <span class="player-final"
+                  >Jogador: <strong id="final-player-wins">0</strong></span
+                >
+                <span class="vs">a</span>
+                <span class="enemy-final"
+                  >Oponente: <strong id="final-enemy-wins">0</strong></span
+                >
               </div>
-              <div class="score-title">Placar</div>
-              <div class="score-details">
-                <div class="score-row opponent-score-row">
-                  <div class="gems-container" id="opponent-gems">
-                    <div class="gem"></div>
-                    <div class="gem"></div>
-                  </div>
+            </div>
+            <button id="play-again-btn" class="play-again-btn">
+              <span>⚔️</span> Jogar Novamente
+            </button>
+            <button id="back-to-builder-btn" class="back-btn">
+              🔙 Montar baralho
+            </button>
+          </div>
+        </div>
+
+        <!-- Overlay de Mulligan (Fase de Troca de Cartas) -->
+        <div
+          id="mulligan-overlay"
+          class="mulligan-overlay hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="mulligan-title"
+          tabindex="-1"
+        >
+          <div class="mulligan-content">
+            <div class="mulligan-header">
+              <h2 class="mulligan-title" id="mulligan-title">
+                ⚔️ Prepare suas Forças
+              </h2>
+              <p class="mulligan-subtitle">
+                Clique em até
+                <span id="redraw-count" class="redraw-count">2</span> cartas
+                para trocá-las
+              </p>
+              <p class="game-feedback" data-game-feedback></p>
+            </div>
+            <div
+              class="mulligan-cards"
+              id="mulligan-cards"
+              tabindex="0"
+              role="region"
+              aria-label="Cartas disponíveis para troca"
+            >
+              <!-- Cards renderizados via JS -->
+            </div>
+            <button id="mulligan-confirm-btn" class="mulligan-confirm-btn">
+              <span>🗡️</span> Finalizar e Lutar
+            </button>
+          </div>
+        </div>
+
+        <div class="game-container">
+          <!-- Área Principal do Tabuleiro (Centro) -->
+          <div class="main-board">
+            <!-- Lado do Oponente (Topo) -->
+            <div class="opponent-side">
+              <div class="opponent-hand-info">
+                Cartas na mão do oponente: <span id="enemy-hand-count">0</span>
+              </div>
+              <!-- Zona de Cerco Inimiga -->
+              <div class="row siege opponent" data-type="siege">
+                <div class="row-label">Cerco · Oponente</div>
+                <div class="cards-container"></div>
+                <div class="row-score">0</div>
+              </div>
+              <!-- Zona de Ataque à Distância Inimiga -->
+              <div class="row ranged opponent" data-type="ranged">
+                <div class="row-label">À distância · Oponente</div>
+                <div class="cards-container"></div>
+                <div class="row-score">0</div>
+              </div>
+              <!-- Zona Corpo a Corpo Inimiga -->
+              <div class="row melee opponent" data-type="melee">
+                <div class="row-label">Corpo a corpo · Oponente</div>
+                <div class="cards-container"></div>
+                <div class="row-score">0</div>
+              </div>
+            </div>
+
+            <!-- Divisor Central -->
+            <div class="field-divider"></div>
+
+            <!-- Lado do Jogador -->
+            <div class="player-side">
+              <!-- Zona Corpo a Corpo Jogador -->
+              <div
+                class="row melee player"
+                data-type="melee"
+                role="button"
+                tabindex="0"
+                aria-label="Jogar na fileira corpo a corpo"
+              >
+                <div class="row-label">Corpo a corpo · Você</div>
+                <div class="cards-container"></div>
+                <div class="row-score">0</div>
+              </div>
+              <!-- Zona de Ataque à Distância Jogador -->
+              <div
+                class="row ranged player"
+                data-type="ranged"
+                role="button"
+                tabindex="0"
+                aria-label="Jogar na fileira à distância"
+              >
+                <div class="row-label">À distância · Você</div>
+                <div class="cards-container"></div>
+                <div class="row-score">0</div>
+              </div>
+              <!-- Zona de Cerco Jogador -->
+              <div
+                class="row siege player"
+                data-type="siege"
+                role="button"
+                tabindex="0"
+                aria-label="Jogar na fileira de cerco"
+              >
+                <div class="row-label">Cerco · Você</div>
+                <div class="cards-container"></div>
+                <div class="row-score">0</div>
+              </div>
+            </div>
+
+            <!-- Área de Controles (Mão + Placar) -->
+            <div class="controls-area">
+              <!-- Mão do Jogador -->
+              <div class="player-hand">
+                <div class="hand-label">Mão do Jogador</div>
+                <p id="turn-status" class="turn-status" aria-live="polite"></p>
+                <p
+                  id="battle-feedback"
+                  class="game-feedback"
+                  data-game-feedback
+                ></p>
+                <div class="hand-cards"></div>
+              </div>
+
+              <!-- Placar -->
+              <div class="scoreboard">
+                <div class="deck-indicator">
+                  <span class="deck-icon">🃏</span>
                   <span
-                    >Opponent: <span id="score-total-opponent">0</span></span
+                    >Baralho: <span id="player-deck-count">0</span> cartas</span
                   >
                 </div>
-                <div class="score-row player-score-row">
-                  <div class="gems-container" id="player-gems">
-                    <div class="gem"></div>
-                    <div class="gem"></div>
+                <div class="score-title">Placar</div>
+                <div class="score-details">
+                  <div class="score-row opponent-score-row">
+                    <div
+                      class="gems-container"
+                      id="opponent-gems"
+                      aria-hidden="true"
+                    >
+                      <div class="gem"></div>
+                      <div class="gem"></div>
+                    </div>
+                    <span
+                      >Oponente: <span id="score-total-opponent">0</span></span
+                    >
+                    <span class="round-count"
+                      >Rodadas vencidas:
+                      <span id="opponent-round-wins">0</span></span
+                    >
                   </div>
-                  <span>Player: <span id="score-total-player">0</span></span>
+                  <div class="score-row player-score-row">
+                    <div
+                      class="gems-container"
+                      id="player-gems"
+                      aria-hidden="true"
+                    >
+                      <div class="gem"></div>
+                      <div class="gem"></div>
+                    </div>
+                    <span>Você: <span id="score-total-player">0</span></span>
+                    <span class="round-count"
+                      >Rodadas vencidas:
+                      <span id="player-round-wins">0</span></span
+                    >
+                  </div>
                 </div>
+                <button id="pass-button" class="pass-btn">Passar Rodada</button>
               </div>
-              <button id="pass-button" class="pass-btn">Passar Rodada</button>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </main>
 
     <div
       id="game-status"

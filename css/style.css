@@ -173,7 +173,7 @@ img {
 .score-label {
   display: block;
   font-size: 0.8rem;
-  color: #666;
+  color: #bfc6d3;
   text-transform: uppercase;
   letter-spacing: 2px;
   margin-bottom: 15px;
@@ -188,7 +188,7 @@ img {
 }
 
 .score-values .vs {
-  color: #555;
+  color: #bfc6d3;
   font-weight: bold;
 }
 
@@ -247,8 +247,7 @@ img {
 
 .opponent-side.passed,
 .player-side.passed {
-  opacity: 0.6;
-  filter: grayscale(0.8);
+  outline: 1px dashed #bfc6d3;
   pointer-events: none; /* Prevent interaction */
 }
 
@@ -472,7 +471,7 @@ img {
 .pass-btn {
   margin-top: 10px;
   padding: 10px 20px;
-  background-color: #e74c3c;
+  background-color: #b83228;
   color: white;
   border: none;
   border-radius: 5px;
@@ -964,6 +963,7 @@ img {
 /* Filtros de Tipo */
 .filter-tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 5px;
 }
 
@@ -1052,10 +1052,8 @@ img {
 }
 
 .builder-card.in-deck {
-  opacity: 0.35;
-  filter: grayscale(0.6);
-  pointer-events: none;
-  transform: scale(0.95);
+  cursor: default;
+  border-style: dashed;
 }
 
 .builder-card.selected {
@@ -1267,7 +1265,7 @@ img {
 
 .stat-label {
   font-size: 0.7rem;
-  color: #666;
+  color: #bfc6d3;
   text-transform: uppercase;
   letter-spacing: 1px;
 }
@@ -1280,7 +1278,7 @@ img {
 
 .stat-requirement {
   font-size: 0.6rem;
-  color: #555;
+  color: #bfc6d3;
 }
 
 .stat-item.stat-power .stat-value {
@@ -1560,8 +1558,6 @@ img {
 
 .mulligan-card.disabled {
   cursor: not-allowed;
-  opacity: 0.6;
-  filter: grayscale(0.5);
 }
 
 .mulligan-card.swapping {
@@ -1609,12 +1605,12 @@ img {
   box-shadow: 0 0 15px rgba(46, 204, 113, 0.4);
 }
 
-.mulligan-card.swapped::before {
-  content: "✓";
+.swapped-label,
+.in-deck-label {
   position: absolute;
-  top: 5px;
+  top: 32px;
   right: 5px;
-  background: #2ecc71;
+  background: #176b37;
   color: white;
   font-size: 0.7rem;
   font-weight: bold;

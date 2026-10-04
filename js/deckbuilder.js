@@ -1,6 +1,7 @@
 import { audioManager } from "./core/audio.js";
 import { disposeGameSession } from "./core/engine.js";
 import { announce } from "./ui/accessibility.js";
+import { getCardDescription, ROW_LABELS } from "./utils/helpers.js";
 import {
   CARD_COLLECTION,
   countDeckComposition,
@@ -53,6 +54,7 @@ function renderCollection() {
   // Filtra e ordena as cartas
   let cardsToShow = CARD_COLLECTION.filter((card) => {
     if (currentFilter === "all") return true;
+    if (currentFilter === "available") return !playerDeckIds.includes(card.id);
     return card.type === currentFilter;
   });
 
@@ -65,6 +67,13 @@ function renderCollection() {
     const cardEl = createBuilderCard(card);
     grid.appendChild(cardEl);
   });
+  if (!cardsToShow.length) {
+    const empty = document.createElement("p");
+    empty.className = "empty-state";
+    empty.textContent =
+      "Todas as cartas já estão no baralho. Escolha outro filtro ou remova uma carta do baralho.";
+    grid.appendChild(empty);
+  }
 }
 
 function createBuilderCard(card) {
@@ -72,19 +81,9 @@ function createBuilderCard(card) {
   div.type = "button";
   div.className = "builder-card";
   div.dataset.cardId = card.id;
-  div.setAttribute(
-    "aria-label",
-    `Adicionar ${card.name}, ${card.power} pontos ao deck`,
-  );
-
   if (card.img) {
     div.style.backgroundImage = `url('${card.img}')`;
     div.classList.add("has-art");
-  }
-
-  // Adiciona classe se já está no deck
-  if (playerDeckIds.includes(card.id)) {
-    div.classList.add("in-deck");
   }
 
   if (card.isHero) {
@@ -99,25 +98,41 @@ function createBuilderCard(card) {
   };
   const rowIcon = rowIcons[card.type] || "";
 
-  // Ícone de habilidade
-  const abilityIcons = {
-    bond_partner: "🔗",
-    hero: "👑",
-  };
-  const abilityIcon = abilityIcons[card.ability] || "";
-
   div.innerHTML = `
         <div class="card-strength-badge">${card.power}</div>
         <div class="row-icon">${rowIcon}</div>
         <div class="card-img-placeholder"></div>
         <div class="card-name">${card.name}</div>
-        ${abilityIcon ? `<div class="ability-badge">${abilityIcon}</div>` : ""}
+        <div class="card-trait">${getCardDescription(card)}</div>
     `;
+  updateCollectionCard(div, card);
 
   // Evento de clique para adicionar ao deck
   div.addEventListener("click", () => addCardToDeck(card.id));
 
   return div;
+}
+
+function updateCollectionCard(element, card) {
+  const inDeck = playerDeckIds.includes(card.id);
+  element.classList.toggle("in-deck", inDeck);
+  element.setAttribute("aria-disabled", String(inDeck));
+  element.querySelector(".in-deck-label")?.remove();
+  if (inDeck) {
+    const label = document.createElement("span");
+    label.className = "in-deck-label";
+    label.textContent = "No baralho";
+    element.appendChild(label);
+    element.setAttribute(
+      "aria-label",
+      `${card.name}, ${card.power} pontos. Já está no baralho.`,
+    );
+  } else {
+    element.setAttribute(
+      "aria-label",
+      `Adicionar ${card.name}, ${card.power} pontos, ${ROW_LABELS[card.row === "all" ? "agile" : card.type]}, ${getCardDescription(card)} ao baralho`,
+    );
+  }
 }
 
 // ============================================
@@ -137,7 +152,7 @@ function renderDeck() {
   deckCards.sort((a, b) => {
     // Por tipo (melee, ranged, siege)
     const rowOrder = { melee: 0, ranged: 1, siege: 2 };
-    const rowDiff = (rowOrder[a.type] || 3) - (rowOrder[b.type] || 3);
+    const rowDiff = (rowOrder[a.type] ?? 3) - (rowOrder[b.type] ?? 3);
     if (rowDiff !== 0) return rowDiff;
     // Por poder
     return (b.power || 0) - (a.power || 0);
@@ -147,6 +162,13 @@ function renderDeck() {
     const cardEl = createDeckCard(card);
     grid.appendChild(cardEl);
   });
+  if (!deckCards.length) {
+    const empty = document.createElement("p");
+    empty.className = "empty-state";
+    empty.textContent =
+      "Seu baralho está vazio. Adicione pelo menos 22 unidades da coleção para iniciar uma batalha.";
+    grid.appendChild(empty);
+  }
 }
 
 function createDeckCard(card) {
@@ -154,7 +176,7 @@ function createDeckCard(card) {
   div.type = "button";
   div.className = "deck-card";
   div.dataset.cardId = card.id;
-  div.setAttribute("aria-label", `Remover ${card.name} do deck`);
+  div.setAttribute("aria-label", `Remover ${card.name} do baralho`);
 
   if (card.img) {
     div.style.backgroundImage = `url('${card.img}')`;
@@ -191,8 +213,14 @@ function addCardToDeck(cardId) {
     `.builder-card[data-card-id="${cardId}"]`,
   );
   if (collectionCard) {
-    collectionCard.classList.add("in-deck", "adding");
+    updateCollectionCard(collectionCard, getCardById(cardId));
+    collectionCard.classList.add("adding");
     setTimeout(() => collectionCard.classList.remove("adding"), 300);
+  }
+
+  if (currentFilter === "available") {
+    renderCollection();
+    document.querySelector("#collection-grid .builder-card")?.focus();
   }
 
   renderDeck();
@@ -214,15 +242,18 @@ function removeCardFromDeck(cardId) {
 
   setTimeout(() => {
     // Remove do array
-    playerDeckIds.splice(index, 1);
+    const currentIndex = playerDeckIds.indexOf(cardId);
+    if (currentIndex === -1) return;
+    playerDeckIds.splice(currentIndex, 1);
 
     // Atualiza visual da coleção
     const collectionCard = document.querySelector(
       `.builder-card[data-card-id="${cardId}"]`,
     );
     if (collectionCard) {
-      collectionCard.classList.remove("in-deck");
+      updateCollectionCard(collectionCard, getCardById(cardId));
     }
+    if (currentFilter === "available") renderCollection();
 
     renderDeck();
     updateStats();
@@ -238,7 +269,7 @@ function clearDeck() {
     clearConfirmationPending = true;
     clearButton.textContent = "Confirmar limpeza";
     announce(
-      "Pressione novamente para confirmar a limpeza do deck.",
+      "Pressione novamente para confirmar a limpeza do baralho.",
       "error-status",
     );
     setTimeout(() => {
@@ -255,7 +286,7 @@ function clearDeck() {
   renderDeck();
   updateStats();
   saveDeckToStorage();
-  announce("Deck limpo.");
+  announce("Baralho limpo. Adicione cartas da coleção para jogar.");
 }
 
 // ============================================
@@ -288,7 +319,7 @@ function updateStats() {
   const playBtn = document.getElementById("start-game-btn");
 
   if (validation.valid) {
-    msgEl.textContent = "✓ Deck válido! Pronto para batalha.";
+    msgEl.textContent = "✓ Baralho válido! Pronto para batalha.";
     msgEl.classList.add("valid");
     playBtn.disabled = false;
   } else {
@@ -332,8 +363,12 @@ function setupBuilderEvents() {
   const filterBtns = document.querySelectorAll(".filter-btn");
   filterBtns.forEach((btn) => {
     btn.addEventListener("click", () => {
-      filterBtns.forEach((b) => b.classList.remove("active"));
+      filterBtns.forEach((b) => {
+        b.classList.remove("active");
+        b.setAttribute("aria-pressed", "false");
+      });
       btn.classList.add("active");
+      btn.setAttribute("aria-pressed", "true");
       currentFilter = btn.dataset.filter;
       renderCollection();
     });
@@ -380,7 +415,10 @@ function setupBuilderEvents() {
 function startBattle() {
   const validation = validateDeck(playerDeckIds);
   if (!validation.valid) {
-    announce(`Deck inválido. ${validation.errors.join(" ")}`, "error-status");
+    announce(
+      `Baralho inválido. ${validation.errors.join(" ")}`,
+      "error-status",
+    );
     return;
   }
 

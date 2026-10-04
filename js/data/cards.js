@@ -232,7 +232,7 @@ export const CARD_COLLECTION = Object.freeze(
     {
       id: "adr14no_1",
       baseId: "adr14no",
-      name: "Adr14no",
+      name: "Adriano",
       type: "ranged",
       power: 5,
       img: "img/personagens/Adriano.png",
@@ -241,7 +241,7 @@ export const CARD_COLLECTION = Object.freeze(
     {
       id: "adr14no_2",
       baseId: "adr14no",
-      name: "Adr14no",
+      name: "Adriano",
       type: "ranged",
       power: 5,
       img: "img/personagens/Adriano.png",
@@ -452,13 +452,13 @@ export function validateDeck(deckIds) {
   const { units } = countDeckComposition(deckIds);
   const errors = [];
   if (!Array.isArray(deckIds) || deckIds.some((id) => typeof id !== "string")) {
-    errors.push("Formato de deck inválido.");
+    errors.push("Formato de baralho inválido.");
   } else {
     if (new Set(deckIds).size !== deckIds.length) {
-      errors.push("Cada cópia de carta só pode aparecer uma vez no deck.");
+      errors.push("Cada cópia de carta só pode aparecer uma vez no baralho.");
     }
     if (deckIds.some((id) => !getCardById(id))) {
-      errors.push("O deck contém cartas que não estão na coleção.");
+      errors.push("O baralho contém cartas que não estão na coleção.");
     }
   }
   if (units < 22) {

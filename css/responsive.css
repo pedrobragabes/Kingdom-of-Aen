@@ -5,8 +5,56 @@
 }
 
 .controls-area {
-  height: 250px;
-  min-height: 250px;
+  height: 300px;
+  min-height: 300px;
+}
+
+.score-row {
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.round-count {
+  width: 100%;
+  font-size: 0.75rem;
+  color: #eee;
+}
+
+.turn-status,
+.game-feedback {
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: #eee;
+  margin: 4px 0;
+}
+
+.game-feedback:empty {
+  display: none;
+}
+
+.game-feedback.is-error {
+  color: #ffb4ab;
+  font-weight: bold;
+}
+
+.empty-state {
+  grid-column: 1 / -1;
+  padding: 16px;
+  color: #eee;
+  line-height: 1.5;
+}
+
+.builder-card .card-trait {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 2px;
+  background: #17202a;
+  color: #fff;
+  font-size: 0.6rem;
+  line-height: 1.2;
+  text-align: center;
 }
 
 .hand-cards {
@@ -111,6 +159,7 @@
     position: static;
     align-self: flex-end;
     margin: 4px;
+    margin-right: 48px;
     font-size: 0.75rem;
   }
   .opponent-side,
@@ -124,9 +173,9 @@
     padding: 4px;
   }
   .row-label {
-    width: 58px;
+    width: 80px;
     flex-shrink: 0;
-    font-size: 0.6rem;
+    font-size: 0.65rem;
   }
   .row-score {
     width: 32px;
