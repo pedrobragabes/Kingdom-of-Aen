@@ -1,0 +1,9 @@
+{
+  "name": "kingdom-of-aen",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "validate": "node scripts/validate-project.js --strict"
+  }
+}

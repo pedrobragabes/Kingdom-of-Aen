@@ -39,125 +39,6 @@ img {
 }
 
 /* ============================================
-   ÁREA DE LÍDERES (Coluna Esquerda)
-   ============================================ */
-.leaders-column {
-    width: 120px;
-    min-width: 120px;
-    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #1a1a2e 100%);
-    border-right: 2px solid #333;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    padding: 20px 10px;
-    box-shadow: inset -5px 0 15px rgba(0,0,0,0.5);
-}
-
-.leader-slot {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.leader-slot.opponent-leader {
-    margin-bottom: auto;
-}
-
-.leader-slot.player-leader {
-    margin-top: auto;
-}
-
-.leader-card {
-    width: 90px;
-    height: 130px;
-    background: linear-gradient(145deg, #2d2d44, #1a1a2e);
-    border: 3px solid var(--gold);
-    border-radius: 8px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    position: relative;
-    box-shadow: 0 0 15px rgba(241, 196, 15, 0.3);
-}
-
-.leader-card:hover:not(.used) {
-    transform: scale(1.05);
-    box-shadow: 0 0 25px rgba(241, 196, 15, 0.6);
-    border-color: #fff;
-}
-
-.leader-card.used {
-    filter: grayscale(0.8) brightness(0.5);
-    cursor: not-allowed;
-    border-color: #444;
-    box-shadow: none;
-}
-
-.leader-card.clickable {
-    animation: leaderPulse 2s infinite;
-}
-
-@keyframes leaderPulse {
-    0%, 100% { box-shadow: 0 0 15px rgba(241, 196, 15, 0.3); }
-    50% { box-shadow: 0 0 30px rgba(241, 196, 15, 0.8), 0 0 10px #fff; }
-}
-
-.leader-img {
-    width: 60px;
-    height: 60px;
-    background: linear-gradient(135deg, #555, #333);
-    border-radius: 50%;
-    margin-bottom: 5px;
-    border: 2px solid var(--gold-dark);
-}
-
-.leader-name {
-    font-size: 0.65rem;
-    font-weight: bold;
-    text-align: center;
-    color: var(--gold);
-    text-shadow: 1px 1px 2px #000;
-    padding: 0 3px;
-}
-
-.leader-ability-text {
-    font-size: 0.5rem;
-    color: #888;
-    text-align: center;
-    padding: 2px;
-}
-
-.leader-used-overlay {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) rotate(-15deg);
-    background: rgba(231, 76, 60, 0.9);
-    color: white;
-    padding: 5px 10px;
-    font-weight: bold;
-    font-size: 0.7rem;
-    border-radius: 3px;
-    display: none;
-    text-shadow: 1px 1px 2px #000;
-    z-index: 10;
-}
-
-.leader-slot.used .leader-used-overlay {
-    display: block;
-}
-
-/* Indicador de turno no líder */
-.leader-slot.player-leader .leader-card.my-turn:not(.used) {
-    border-color: var(--green);
-    box-shadow: 0 0 20px rgba(46, 204, 113, 0.5);
-}
-
-/* ============================================
    ÁREA PRINCIPAL DO TABULEIRO
    ============================================ */
 .main-board {
@@ -459,55 +340,6 @@ img {
     border-left: 5px solid #3498db; /* Blue for Siege */
 }
 
-/* Weather Effects */
-.weather-active-frost, .weather-frost {
-    background-color: rgba(135, 206, 250, 0.3) !important;
-    box-shadow: inset 0 0 30px rgba(135, 206, 250, 0.8);
-    border-color: #3498db;
-    position: relative;
-}
-.weather-active-frost::after, .weather-frost::after {
-    content: "❄️";
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 2rem;
-    opacity: 0.5;
-}
-
-.weather-active-fog, .weather-fog {
-    background-color: rgba(189, 195, 199, 0.3) !important;
-    box-shadow: inset 0 0 30px rgba(189, 195, 199, 0.8);
-    border-color: #95a5a6;
-    position: relative;
-}
-.weather-active-fog::after, .weather-fog::after {
-    content: "🌫️";
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 2rem;
-    opacity: 0.5;
-}
-
-.weather-active-rain, .weather-rain {
-    background-color: rgba(41, 128, 185, 0.3) !important;
-    box-shadow: inset 0 0 30px rgba(41, 128, 185, 0.8);
-    border-color: #2980b9;
-    position: relative;
-}
-.weather-active-rain::after, .weather-rain::after {
-    content: "🌧️";
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 2rem;
-    opacity: 0.5;
-}
-
 /* Opponent specific styling (optional, maybe darker) */
 .opponent-side .row {
     opacity: 0.9;
@@ -675,16 +507,6 @@ img {
     }
 }
 
-@keyframes burn {
-    0% { transform: translate(1px, 1px) rotate(0deg); filter: brightness(1) sepia(0) saturate(1) hue-rotate(0deg); }
-    10% { transform: translate(-1px, -2px) rotate(-1deg); }
-    20% { transform: translate(-3px, 0px) rotate(1deg); filter: brightness(0.8) sepia(1) saturate(5) hue-rotate(-50deg); } /* Reddish */
-    30% { transform: translate(3px, 2px) rotate(0deg); }
-    40% { transform: translate(1px, -1px) rotate(1deg); }
-    50% { transform: translate(-1px, 2px) rotate(-1deg); opacity: 1; }
-    100% { transform: translate(0, 0) rotate(0deg); opacity: 0; filter: brightness(0) sepia(1) saturate(5) hue-rotate(-50deg); }
-}
-
 @keyframes heroPulse {
     0% { box-shadow: 0 0 8px rgba(241, 196, 15, 0.6); }
     50% { box-shadow: 0 0 25px rgba(241, 196, 15, 0.9), 0 0 15px #fff; }
@@ -850,22 +672,6 @@ img {
     background: linear-gradient(180deg, #f1c40f 0%, #d4ac0d 100%);
 }
 
-/* Carta Espião */
-.card.spy-card {
-    border-color: #8e44ad;
-    box-shadow: 
-        0 0 10px rgba(142, 68, 173, 0.5),
-        0 4px 8px rgba(0, 0, 0, 0.4);
-}
-
-.card.spy-card .card-strength-badge {
-    background: linear-gradient(145deg, #9b59b6, #7d3c98);
-}
-
-.card.spy-card .card-desc {
-    background: linear-gradient(180deg, #8e44ad 0%, #6c3483 100%);
-}
-
 /* Carta Agile */
 .card.agile-card {
     border-color: #16a085;
@@ -899,24 +705,6 @@ img {
     opacity: 0.6;
     border: 3px dashed #fff;
     transform: scale(1.08) rotate(2deg);
-}
-
-.card.burning {
-    animation: burn 0.8s forwards;
-}
-
-.card.scorched {
-    transition: all 0.5s ease;
-    transform: scale(0.8);
-    opacity: 0;
-    filter: brightness(0.3) sepia(1) hue-rotate(-50deg);
-}
-
-.valid-target {
-    box-shadow: 0 0 15px 5px #2ecc71 !important;
-    transform: scale(1.08);
-    z-index: 50;
-    border-color: #2ecc71 !important;
 }
 
 /* --- Drag and Drop Visuals --- */
@@ -1268,23 +1056,6 @@ img {
     color: #fff;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
     z-index: 5;
-}
-
-/* Tipo de Card: Especial */
-.builder-card.special {
-    border-color: #8e44ad;
-    background: linear-gradient(145deg, #9b59b6 0%, #7d3c98 50%, #5b2c6f 100%);
-}
-
-.builder-card.special:hover {
-    border-color: #bb8fce;
-    box-shadow: 0 8px 20px rgba(155, 89, 182, 0.5);
-}
-
-.builder-card.special .card-name {
-    background: linear-gradient(180deg, #9b59b6 0%, #7d3c98 100%);
-    color: #fff;
-    border-top-color: #5b2c6f;
 }
 
 /* Tipo de Card: Hero */
@@ -1803,3 +1574,26 @@ img {
 .mulligan-card:nth-child(9) { animation-delay: 0.45s; }
 .mulligan-card:nth-child(10) { animation-delay: 0.5s; }
 
+/* Accessibility */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+:where(button, [role="button"], [tabindex]):focus-visible {
+    outline: 3px solid #ffe082;
+    outline-offset: 3px;
+}
+
+.card.selected,
+.card[aria-pressed="true"] {
+    outline: 3px solid #ffe082;
+    transform: translateY(-12px);
+}

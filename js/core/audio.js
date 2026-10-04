@@ -12,7 +12,7 @@
  * Gerenciador de áudio para música de fundo e efeitos sonoros
  * @class
  */
-class AudioManager {
+export class AudioManager {
     /**
      * Cria uma nova instância do AudioManager
      * @param {string} [basePath='audio/'] - Caminho base para os arquivos de áudio
@@ -82,9 +82,11 @@ class AudioManager {
      * @private
      */
     _preloadAll() {
+        const AudioConstructor = globalThis.Audio;
+        if (!AudioConstructor) return;
         for (const key in this.sfx) {
             this.preloaded[key] = this.sfx[key].map(file => {
-                const audio = new Audio(this.basePath + file);
+                const audio = new AudioConstructor(this.basePath + file);
                 audio.preload = 'auto';
                 audio.volume = 0.5;
                 return audio;
@@ -97,14 +99,13 @@ class AudioManager {
      * @param {string} [track='music_bg.mp3'] - Nome do arquivo da música
      */
     playMusic(track = 'music_bg.mp3') {
-        if (this.bgMusic) return;
+        const AudioConstructor = globalThis.Audio;
+        if (this.bgMusic || !AudioConstructor) return;
 
-        this.bgMusic = new Audio(this.basePath + track);
+        this.bgMusic = new AudioConstructor(this.basePath + track);
         this.bgMusic.loop = true;
         this.bgMusic.volume = this.musicMuted ? 0 : 0.3;
-        this.bgMusic.play().catch(e => {
-            console.warn('Autoplay blocked. Music will play after user interaction.', e);
-        });
+        this.bgMusic.play().catch(() => { /* Aguarda a próxima interação do usuário. */ });
     }
 
     /**
@@ -159,9 +160,4 @@ class AudioManager {
  * Instância global do gerenciador de áudio
  * @type {AudioManager}
  */
-const audioManager = new AudioManager();
-
-// ============================================
-// ===       EXPORTS (Futuros ES6 Modules) ===
-// ============================================
-// export { AudioManager, audioManager };
+export const audioManager = new AudioManager();

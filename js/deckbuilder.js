@@ -1,3 +1,13 @@
+import { audioManager } from './core/audio.js';
+import { disposeGameSession } from './core/engine.js';
+import { announce } from './ui/accessibility.js';
+import {
+    CARD_COLLECTION,
+    countDeckComposition,
+    getCardById,
+    validateDeck
+} from './data/cards.js';
+
 // ============================================
 // DECK BUILDER - Kingdom of Aen
 // ============================================
@@ -5,6 +15,15 @@
 // Estado do Builder
 let playerDeckIds = []; // IDs das cartas no deck do jogador
 let currentFilter = 'all';
+let startGameHandler = null;
+let clearConfirmationPending = false;
+
+export function configureDeckBuilder({ startGame }) {
+    startGameHandler = startGame;
+}
+export function getPlayerDeckIds() {
+    return [...playerDeckIds];
+}
 
 // Chave do LocalStorage
 const DECK_STORAGE_KEY = 'kingdomOfAen_playerDeck';
@@ -13,7 +32,7 @@ const DECK_STORAGE_KEY = 'kingdomOfAen_playerDeck';
 // INICIALIZAÇÃO
 // ============================================
 
-function initDeckBuilder() {
+export function initDeckBuilder() {
     loadDeckFromStorage();
     renderCollection();
     renderDeck();
@@ -34,17 +53,11 @@ function renderCollection() {
     // Filtra e ordena as cartas
     let cardsToShow = CARD_COLLECTION.filter(card => {
         if (currentFilter === 'all') return true;
-        if (currentFilter === 'special') return card.category === 'special';
-        // Usar o tipo da carta para filtro (melee/ranged/siege)
-        return card.type === currentFilter && card.category !== 'special';
+        return card.type === currentFilter;
     });
     
     // Ordena: primeiro por tipo (units, depois specials), depois por poder
     cardsToShow.sort((a, b) => {
-        // Especiais por último
-        if (a.category === 'special' && b.category !== 'special') return 1;
-        if (a.category !== 'special' && b.category === 'special') return -1;
-        // Por poder (maior primeiro)
         return (b.power || 0) - (a.power || 0);
     });
     
@@ -55,9 +68,11 @@ function renderCollection() {
 }
 
 function createBuilderCard(card) {
-    const div = document.createElement('div');
+    const div = document.createElement('button');
+    div.type = 'button';
     div.className = 'builder-card';
     div.dataset.cardId = card.id;
+    div.setAttribute('aria-label', `Adicionar ${card.name}, ${card.power} pontos ao deck`);
 
     if (card.img) {
         div.style.backgroundImage = `url('${card.img}')`;
@@ -69,10 +84,6 @@ function createBuilderCard(card) {
         div.classList.add('in-deck');
     }
     
-    // Classe especial para tipo
-    if (card.category === 'special') {
-        div.classList.add('special');
-    }
     if (card.isHero) {
         div.classList.add('hero');
     }
@@ -83,24 +94,17 @@ function createBuilderCard(card) {
         ranged: '🏹',
         siege: '🏰'
     };
-    const rowIcon = card.category === 'special' ? '✨' : (rowIcons[card.type] || '');
+    const rowIcon = rowIcons[card.type] || '';
     
     // Ícone de habilidade
     const abilityIcons = {
-        spy: '🕵️',
-        spy_medic: '🕵️',
-        medic: '💉',
         bond_partner: '🔗',
-        decoy: '🎭',
-        scorch: '🔥',
-        weather: '🌨️',
-        clear_weather: '☀️',
         hero: '👑'
     };
     const abilityIcon = abilityIcons[card.ability] || '';
     
     div.innerHTML = `
-        ${card.category !== 'special' || card.power > 0 ? `<div class="card-strength-badge">${card.power}</div>` : ''}
+        <div class="card-strength-badge">${card.power}</div>
         <div class="row-icon">${rowIcon}</div>
         <div class="card-img-placeholder"></div>
         <div class="card-name">${card.name}</div>
@@ -128,9 +132,6 @@ function renderDeck() {
     
     // Ordena por fileira e poder
     deckCards.sort((a, b) => {
-        // Especiais por último
-        if (a.category === 'special' && b.category !== 'special') return 1;
-        if (a.category !== 'special' && b.category === 'special') return -1;
         // Por tipo (melee, ranged, siege)
         const rowOrder = { melee: 0, ranged: 1, siege: 2 };
         const rowDiff = (rowOrder[a.type] || 3) - (rowOrder[b.type] || 3);
@@ -146,21 +147,19 @@ function renderDeck() {
 }
 
 function createDeckCard(card) {
-    const div = document.createElement('div');
+    const div = document.createElement('button');
+    div.type = 'button';
     div.className = 'deck-card';
     div.dataset.cardId = card.id;
+    div.setAttribute('aria-label', `Remover ${card.name} do deck`);
 
     if (card.img) {
         div.style.backgroundImage = `url('${card.img}')`;
         div.classList.add('has-art');
     }
     
-    if (card.category === 'special') {
-        div.classList.add('special');
-    }
-    
     div.innerHTML = `
-        ${card.category !== 'special' || card.power > 0 ? `<div class="card-strength-badge">${card.power}</div>` : ''}
+        <div class="card-strength-badge">${card.power}</div>
         <div class="card-name">${card.name}</div>
         <div class="remove-hint">✕</div>
     `;
@@ -224,14 +223,27 @@ function removeCardFromDeck(cardId) {
 
 function clearDeck() {
     if (playerDeckIds.length === 0) return;
-    
-    if (confirm('Tem certeza que deseja limpar o deck?')) {
-        playerDeckIds = [];
-        renderCollection(); // Atualiza status de "in-deck"
-        renderDeck();
-        updateStats();
-        saveDeckToStorage();
+
+    const clearButton = document.getElementById('clear-deck-btn');
+    if (!clearConfirmationPending) {
+        clearConfirmationPending = true;
+        clearButton.textContent = 'Confirmar limpeza';
+        announce('Pressione novamente para confirmar a limpeza do deck.', 'error-status');
+        setTimeout(() => {
+            clearConfirmationPending = false;
+            clearButton.textContent = '🗑️ Limpar';
+        }, 5000);
+        return;
     }
+
+    clearConfirmationPending = false;
+    clearButton.textContent = '🗑️ Limpar';
+    playerDeckIds = [];
+    renderCollection();
+    renderDeck();
+    updateStats();
+    saveDeckToStorage();
+    announce('Deck limpo.');
 }
 
 // ============================================
@@ -245,12 +257,10 @@ function updateStats() {
     // Atualiza valores
     document.getElementById('stat-total').textContent = composition.total;
     document.getElementById('stat-units').textContent = composition.units;
-    document.getElementById('stat-specials').textContent = composition.specials;
     document.getElementById('stat-power').textContent = composition.totalPower;
     
     // Atualiza classes de validação
     const unitsItem = document.getElementById('stat-units').closest('.stat-item');
-    const specialsItem = document.getElementById('stat-specials').closest('.stat-item');
     
     // Unidades: válido se >= 22
     if (composition.units >= 22) {
@@ -259,15 +269,6 @@ function updateStats() {
     } else {
         unitsItem.classList.add('invalid');
         unitsItem.classList.remove('valid');
-    }
-    
-    // Especiais: válido se <= 10
-    if (composition.specials <= 10) {
-        specialsItem.classList.add('valid');
-        specialsItem.classList.remove('invalid');
-    } else {
-        specialsItem.classList.add('invalid');
-        specialsItem.classList.remove('valid');
     }
     
     // Mensagem de validação
@@ -292,9 +293,7 @@ function updateStats() {
 function saveDeckToStorage() {
     try {
         localStorage.setItem(DECK_STORAGE_KEY, JSON.stringify(playerDeckIds));
-    } catch (e) {
-        console.warn('Não foi possível salvar o deck:', e);
-    }
+    } catch { /* Storage indisponível: a sessão continua em memória. */ }
 }
 
 function loadDeckFromStorage() {
@@ -305,8 +304,7 @@ function loadDeckFromStorage() {
             // Valida se os IDs ainda existem na coleção
             playerDeckIds = ids.filter(id => getCardById(id) !== null);
         }
-    } catch (e) {
-        console.warn('Não foi possível carregar o deck:', e);
+    } catch {
         playerDeckIds = [];
     }
 }
@@ -353,21 +351,26 @@ function setupBuilderEvents() {
 function startBattle() {
     const validation = validateDeck(playerDeckIds);
     if (!validation.valid) {
-        alert('Deck inválido! ' + validation.errors.join(' '));
+        announce(`Deck inválido. ${validation.errors.join(' ')}`, 'error-status');
         return;
     }
+
+    disposeGameSession();
+
     // Play shuffle SFX when starting the battle
-    try { audioManager.playSFX('shuffle'); } catch (e) { console.warn('SFX failed', e); }
+    try { audioManager.playSFX('shuffle'); } catch { /* Audio opcional. */ }
 
     // Esconde o builder, mostra a batalha
     document.getElementById('scene-builder').classList.remove('active');
     document.getElementById('scene-battle').classList.add('active');
     
     // Inicia o jogo com o deck do jogador
-    initializeGameWithDeck(playerDeckIds);
+    startGameHandler?.([...playerDeckIds]);
 }
 
-function backToBuilder() {
+export function backToBuilder() {
+    disposeGameSession({ stopAudio: true });
+
     // Esconde a batalha e o modal
     document.getElementById('scene-battle').classList.remove('active');
     document.getElementById('game-over-modal').classList.add('hidden');
@@ -394,11 +397,4 @@ function createDefaultDeck() {
     
     return defaultIds;
 }
-
-// ============================================
-// INICIALIZAÇÃO AUTOMÁTICA
-// ============================================
-
-document.addEventListener('DOMContentLoaded', () => {
-    initDeckBuilder();
-});
+// End of deck builder.

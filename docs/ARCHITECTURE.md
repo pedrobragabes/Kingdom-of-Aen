@@ -1,6 +1,6 @@
 # Arquitetura
 
-Kingdom of Aen roda como uma pagina estatica. O estado e compartilhado por variaveis globais e os scripts precisam ser carregados na ordem definida em `index.html`.
+Kingdom of Aen roda como uma pagina estatica. Um `GameState` imutavel e a unica fonte de verdade da partida; a interface e reconstruida a partir dele.
 
 ## Visao Geral
 
@@ -18,25 +18,26 @@ flowchart TD
     I --> A
 ```
 
-## Ordem dos Scripts
+## Entry Point e Dependencias
 
-`index.html` carrega os arquivos nesta ordem:
+`index.html` carrega somente `js/main.js` com `type="module"`. Cada arquivo declara seus imports e exports; nenhuma dependencia depende da ordem manual de tags.
 
-1. `js/utils/helpers.js`
-2. `js/data/cards.js`
-3. `js/core/state.js`
-4. `js/core/audio.js`
-5. `js/core/abilities.js`
-6. `js/core/leaders.js`
-7. `js/core/ai.js`
-8. `js/core/engine.js`
-9. `js/ui/render.js`
-10. `js/ui/interactions.js`
-11. `js/ui/mulligan.js`
-12. `js/deckbuilder.js`
-13. `js/main.js`
+```mermaid
+flowchart LR
+    D["domain"] --> C["core/application"]
+    D --> U["ui"]
+    C --> U
+    C --> M["main.js"]
+    U --> M
+    I["data/infrastructure"] --> C
+    I --> M
+```
 
-Essa ordem e parte do contrato atual do projeto. Como os arquivos nao usam ES Modules, funcoes e constantes precisam existir globalmente antes de serem chamadas.
+- `domain`: modelos, reducer e regras puras.
+- `core`: store, audio e orquestracao da partida.
+- `ui`: projecoes e interacoes do navegador.
+- `data`: catalogo e validacao de deck.
+- `main.js`: composition root que conecta store, render, builder e engine.
 
 ## Modulos
 
@@ -44,31 +45,33 @@ Essa ordem e parte do contrato atual do projeto. Como os arquivos nao usam ES Mo
 | --- | --- |
 | `index.html` | Estrutura das duas cenas: deck builder e batalha. |
 | `css/style.css` | Layout, cartas, tabuleiro, modais, animacoes, mulligan e deck builder. |
-| `js/data/cards.js` | Dados de cartas, lideres, validacao de deck e helpers de colecao. |
+| `js/data/cards.js` | Dados de cartas, validacao de deck e helpers de colecao. |
+| `js/domain/card.js` | Definicoes e instancias canonicas, zonas, ownership e controle. |
+| `js/domain/game-state.js` | Estado puro, reducer, comandos e calculo de pontuacao. |
 | `js/utils/helpers.js` | Constantes de icones e descricoes de habilidades. |
-| `js/core/state.js` | Estado global da partida, rodada, clima, cemiterios e mulligan. |
+| `js/core/state.js` | Store da sessao, dispatch e registro de timers cancelaveis. |
 | `js/core/audio.js` | Musica, efeitos sonoros, cache de audio e mute persistido. |
-| `js/core/abilities.js` | Habilidades de cartas: clima, medico, espiao, scorch e decoy. |
-| `js/core/leaders.js` | Inicializacao, renderizacao, uso e IA dos lideres. |
 | `js/core/ai.js` | Decisao do oponente por prioridades. |
-| `js/core/engine.js` | Pontuacao, turnos, fim de rodada, fim de jogo e reset. |
-| `js/ui/render.js` | Criacao visual das cartas e atualizacao de contadores. |
+| `js/core/engine.js` | Orquestracao de turnos, fim de rodada, fim de jogo e reset. |
+| `js/ui/render.js` | Projecao integral de `GameState` para o DOM. |
 | `js/ui/interactions.js` | Drag and drop das cartas do jogador. |
 | `js/ui/mulligan.js` | Fase de troca inicial de cartas. |
 | `js/deckbuilder.js` | Montagem, filtros, estatisticas e persistencia do deck. |
 | `js/main.js` | Inicializacao do jogo, controles principais e botao de audio. |
 
-## Estado Global
+## Estado da Partida
 
-O estado principal vive em `js/core/state.js`:
+`js/domain/game-state.js` define o estado puro e `js/core/state.js` encapsula a referencia da sessao atual dentro do modulo. `GameState` contem:
 
-- `activeWeather`: clima ativo por fileira.
-- `enemyHand`, `playerDeck`, `enemyDeck`: cartas em mao e decks restantes.
-- `playerPassed`, `enemyPassed`, `isProcessingTurn`: controle de turno.
-- `playerWins`, `enemyWins`: placar da partida.
-- `playerGraveyard`, `enemyGraveyard`: cartas descartadas ou destruidas.
-- `playerLeader`, `enemyLeader`: lideres da partida.
-- `mulliganHand`, `mulliganRedraws`: estado temporario do mulligan.
+- `phase` e `processing`: fase atual e bloqueio de entrada.
+- `mulliganRedraws`: trocas restantes.
+- `players.player` e `players.opponent`: deck, mao, tabuleiro, passe e vitorias de cada lado.
+
+Toda mudanca passa por `gameReducer()`. Os comandos cobrem inicializacao, mulligan, inicio da batalha, compra, jogada, passe, premiacao e reset de rodada. `calculateGameScore()` recebe somente o estado e roda em Node sem DOM.
+
+`renderGameState()` limpa e recria mao, tabuleiro, placar, contadores, gemas e estados de turno. O DOM nunca e consultado para decidir uma regra.
+
+`pendingGameTimers`, mantido fora do dominio, registra tarefas assincronas pertencentes a sessao atual.
 
 O deck escolhido pelo jogador fica em `playerDeckIds`, definido em `js/deckbuilder.js`, e e salvo em `localStorage` com a chave `kingdomOfAen_playerDeck`.
 
@@ -77,12 +80,23 @@ O deck escolhido pelo jogador fica em `playerDeckIds`, definido em `js/deckbuild
 1. `DOMContentLoaded` em `deckbuilder.js` chama `initDeckBuilder()`.
 2. O deck salvo e carregado do `localStorage`.
 3. A colecao e o deck sao renderizados.
-4. `DOMContentLoaded` em `main.js` configura drag and drop, controles, lideres e audio.
+4. `DOMContentLoaded` em `main.js` configura drag and drop, controles e audio.
 5. Ao clicar em iniciar batalha, `startBattle()` valida o deck e chama `initializeGameWithDeck(playerDeckIds)`.
 6. O jogador e o inimigo compram 10 cartas.
 7. O mulligan inicia antes da batalha ficar jogavel.
 
 ## Contratos de Dados
+
+`CardDefinition` e a fonte imutavel de nome, poder, arte e habilidade. `CardInstance` referencia essa definicao e adiciona estado de runtime:
+
+- `instanceId`: identidade unica e estavel durante toda a sessao.
+- `definitionId` e `definition`: ligacao com a definicao original.
+- `ownerId`: dono permanente da carta.
+- `controllerId`: lado que controla a carta no momento.
+- `zone`: `deck`, `mulligan`, `hand` ou `board`.
+- `currentRow`: fileira ocupada quando a zona e `board`.
+
+Transicoes retornam uma nova instancia imutavel, preservando identidade, definicao e ownership. O elemento visual mantem uma referencia direta em `cardInstance`; seus `data-*` sao apenas metadados de apresentacao durante a migracao do estado.
 
 Cada carta da colecao deve seguir este formato base:
 
@@ -106,24 +120,18 @@ Campos relevantes:
 - `baseId`: identificador da carta base.
 - `type`: fileira principal: `melee`, `ranged` ou `siege`.
 - `row: "all"`: carta agile, pode ir em qualquer fileira.
-- `category`: `unit` ou `special`, usado principalmente pela validacao do deck.
-- `ability`: habilidade lida por `triggerAbility()`.
-- `isHero`: carta imune a clima e scorch.
+- `category`: `unit`, usado pela validacao do deck.
+- `ability`: `bond_partner` ou `hero` no recorte atual.
+- `partner`: nome da unidade necessaria para ativar `bond_partner`.
+- `isHero`: identifica unidades heroicas.
 
-## Pontos de Atencao
+## Contratos de Execucao
 
-- `shuffleArray()` existe em `js/utils/helpers.js`. Em `js/data/cards.js` ja foi removida a duplicacao.
-- `createDefaultDeck()` (deckbuilder) ja usa `category === 'unit'`, alinhado com os dados.
-- A logica de remocao de especiais one-shot ja usa `dataset.category === 'special'`.
-- Varias referencias de arte apontam para `assets/*.png`, pasta que nao existe atualmente. Ver [ASSETS.md](ASSETS.md).
-- Algumas habilidades estao implementadas no motor (`weather_*`, `scorch`, `spy`, `tight_bond`), mas nao possuem cartas na colecao atual. Ver [GAME_RULES.md](GAME_RULES.md).
-- Estado e funcoes vivem em escopo global (sem ES Modules). A ordem de scripts em `index.html` e o contrato implicito do projeto.
+- Uma sessao nova sempre cancela timers pertencentes a sessao anterior.
+- A IA conclui toda a sua acao antes de liberar a entrada do jogador.
+- Cartas sem arte cadastrada usam o fallback visual e nao apontam para arquivos inexistentes.
+- Toda habilidade presente nos dados precisa ter regra alcancavel, descricao e cobertura de teste.
 
-## Limites Atuais da Arquitetura
+## Limites
 
-A arquitetura atual e ideal para um single-player local pequeno, mas tem fricoes para crescer:
-
-- **Sem camada de rede.** Nao existe nenhum protocolo de mensagens, websocket, REST ou backend. Adicionar multiplayer exige extrair a logica de estado de variaveis globais (ver [MULTIPLAYER.md](MULTIPLAYER.md)).
-- **Estado misturado com DOM.** `updateScore()` le o DOM como fonte de verdade. Para validacao server-side, a verdade do estado precisaria viver fora do DOM.
-- **Sem testes.** Nao ha testes automatizados. Refatorar para multiplayer sem testes e arriscado.
-- **Sem build step.** Falta de bundler dificulta usar libs (websockets, frameworks de UI). Migrar para Vite/ESBuild + ES Modules e um caminho natural antes de online.
+A separacao do dominio permite validar regras sem navegador, mas ainda nao existe backend ou multiplayer. O plano em [MULTIPLAYER.md](MULTIPLAYER.md) continua futuro.

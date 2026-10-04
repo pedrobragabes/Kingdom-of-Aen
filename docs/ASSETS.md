@@ -1,6 +1,6 @@
 # Assets
 
-Este documento registra os assets usados e as lacunas encontradas na revisao atual.
+Este documento registra os assets usados e a convencao para cartas sem arte propria.
 
 ## Estrutura Atual
 
@@ -11,7 +11,7 @@ img/
 └── personagens/
 ```
 
-Nao existe uma pasta `assets/` no repositorio atual, mas varias cartas e lideres apontam para ela.
+Nao existe uma pasta `assets/`. Imagens do jogo ficam exclusivamente em `img/`.
 
 ## Imagens Existentes
 
@@ -24,12 +24,9 @@ Icones:
 Personagens referenciados por cartas e encontrados:
 
 - `img/personagens/Adriano.png`
-- `img/personagens/Corredores.png`
 - `img/personagens/Cozinheiros.png`
 - `img/personagens/Daniel.png`
-- `img/personagens/Espantalho.png`
 - `img/personagens/Gabriel.png`
-- `img/personagens/Geleia.png`
 - `img/personagens/Suelly.png`
 - `img/personagens/Thiago.png`
 - `img/personagens/Wellington.png`
@@ -38,30 +35,19 @@ Personagens existentes, mas ainda nao referenciados diretamente na colecao atual
 
 - `img/personagens/Ana Rita.png`
 - `img/personagens/Carol.png`
+- `img/personagens/Corredores.png`
 - `img/personagens/Ciça.png`
+- `img/personagens/Espantalho.png`
+- `img/personagens/Geleia.png`
 - `img/personagens/Marco.png`
 - `img/personagens/Paty.png`
 - `img/personagens/Renata.png`
 
-## Referencias Ausentes
+## Cartas sem arte
 
-As seguintes referencias aparecem no codigo, mas os arquivos nao existem:
+Cartas sem um arquivo de imagem aprovado nao declaram a propriedade `img`. A interface aplica automaticamente o gradiente padrao, evitando requisicoes quebradas e associacoes incorretas de personagens.
 
-- `assets/anderson.png`
-- `assets/clarice.png`
-- `assets/eliel.png`
-- `assets/jacy.png`
-- `assets/jassyhara.png`
-- `assets/kariel.png`
-- `assets/leader_archmage.png`
-- `assets/leader_general.png`
-- `assets/leader_usurper.png`
-- `assets/leader_warlord.png`
-- `assets/marcelo.png`
-- `assets/marcus.png`
-- `assets/pattenberg.png`
-- `assets/ritatril.png`
-- `assets/vanessa.png`
+Novas artes so devem ser cadastradas quando o arquivo existir no repositorio e sua licenca estiver documentada.
 
 ## Audio
 
@@ -93,7 +79,7 @@ Esse arquivo parece ser uma copia da musica de fundo e pode ser removido ou docu
 
 - Usar `img/personagens/` para artes de cartas.
 - Usar `img/icons/` para icones de fileira e UI.
-- Evitar caminhos novos em `assets/` enquanto a pasta nao existir.
+- Nao usar caminhos em `assets/`.
 - Preferir nomes sem acentos em novos arquivos para reduzir risco em sistemas diferentes.
 - Manter o caminho do `img` igual ao valor usado em `CARD_COLLECTION`.
 - Ao renomear uma imagem, atualizar `js/data/cards.js` na mesma mudanca.
