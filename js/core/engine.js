@@ -162,7 +162,8 @@ function showRoundMessage(message) {
   const toast = document.createElement("div");
   toast.className = "round-toast";
   toast.innerHTML = `<span>${message.replace(/\n/g, "<br>")}</span>`;
-  document.body.appendChild(toast);
+  document.getElementById("scene-battle").appendChild(toast);
+  announce(message);
 
   scheduleGameTask(() => {
     toast.classList.add("show");
@@ -293,11 +294,21 @@ export function disposeGameSession({ stopAudio = false } = {}) {
     "score-total-opponent": "0",
     "enemy-hand-count": "0",
     "player-deck-count": "0",
+    "player-round-wins": "0",
+    "opponent-round-wins": "0",
   };
   Object.entries(counters).forEach(([id, value]) => {
     const element = document.getElementById(id);
     if (element) element.textContent = value;
   });
+  document
+    .querySelectorAll(
+      "[data-game-feedback], #turn-status, #game-status, #error-status",
+    )
+    .forEach((element) => {
+      element.textContent = "";
+      element.classList.remove("is-error");
+    });
 
   if (stopAudio) audioManager.stopMusic();
 }

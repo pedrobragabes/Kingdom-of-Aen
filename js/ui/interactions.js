@@ -2,6 +2,7 @@ import { GAME_SIDES } from "../domain/game-state.js";
 import { audioManager } from "../core/audio.js";
 import { queueEnemyTurn } from "../core/engine.js";
 import { dispatchGameCommand, gameState } from "../core/state.js";
+import { ROW_LABELS } from "../utils/helpers.js";
 import { announce } from "./accessibility.js";
 
 let selectedCardId = null;
@@ -81,15 +82,29 @@ function playSelectedCard(row) {
 function playCard(cardId, row) {
   if (!cardId || gameState.players.player.passed || gameState.processing)
     return;
+  const card = gameState.players.player.hand.find(
+    (candidate) => candidate.instanceId === cardId,
+  );
+  if (card && card.row !== "all" && card.type !== row.dataset.type) {
+    announce(
+      `${card.name} deve ser jogada na fileira ${ROW_LABELS[card.type]}. Escolha essa fileira para continuar.`,
+      "error-status",
+    );
+    return;
+  }
   try {
-    selectedCardId = null;
     dispatchGameCommand({
       type: "PLAY_CARD",
       side: GAME_SIDES.PLAYER,
       instanceId: cardId,
       row: row.dataset.type,
     });
-    announce("Carta jogada. Turno do oponente.");
+    selectedCardId = null;
+    announce(
+      gameState.players.opponent.passed
+        ? "Carta jogada. O oponente já passou; você pode jogar novamente."
+        : "Carta jogada. Turno do oponente.",
+    );
   } catch (error) {
     announce(error.message, "error-status");
     return;

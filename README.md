@@ -1,6 +1,6 @@
 # Kingdom of Aen
 
-Kingdom of Aen e um jogo de cartas tatico inspirado em duelos por fileiras, com deck builder, mulligan, vinculos entre cartas e uma IA simples para o oponente.
+Kingdom of Aen e um jogo de cartas tatico inspirado em duelos por fileiras, com montagem de baralho, troca inicial de cartas, vinculos entre cartas e uma IA simples para o oponente.
 
 O projeto e uma aplicacao web estatica feita com HTML, CSS e JavaScript puro em ES Modules. Nao ha etapa de build, bundler ou framework.
 
@@ -9,7 +9,8 @@ O projeto e uma aplicacao web estatica feita com HTML, CSS e JavaScript puro em 
 - Deck builder com persistencia em `localStorage`.
 - Colecao com 39 unidades.
 - Partida em melhor de 3 rodadas.
-- Tabuleiro com fileiras `melee`, `ranged` e `siege`.
+- Interface em portugues: fileiras Corpo a corpo, À distância e Cerco; os IDs internos `melee`, `ranged` e `siege` permanecem estaveis.
+- Estados de turno, erros, cartas no baralho, trocas e rodadas vencidas tambem aparecem em texto.
 - IA baseada em prioridades para passar, administrar cartas e completar vinculos de parceiros.
 - Audio de fundo e efeitos sonoros locais.
 
@@ -31,10 +32,10 @@ Abrir `index.html` diretamente por `file://` nao e suportado por causa das regra
 
 ## Como Jogar
 
-1. Monte um deck no deck builder.
-2. O deck precisa ter pelo menos 22 unidades.
-3. Inicie a batalha e troque ate 2 cartas no mulligan.
-4. Jogue cartas nas fileiras corretas ou passe a rodada.
+1. Monte um baralho na colecao. O filtro Disponiveis mostra as cartas ainda nao adicionadas.
+2. O baralho precisa ter pelo menos 22 unidades.
+3. Inicie a batalha e troque ate 2 cartas na preparacao inicial.
+4. Selecione uma carta com clique, Enter ou Espaco e ative a fileira correta. Arrastar tambem funciona. Uma fileira incorreta apresenta uma instrucao e mantem a selecao para tentar novamente.
 5. Vence a rodada quem tiver a maior pontuacao total no tabuleiro.
 6. Vence a partida quem ganhar 2 rodadas.
 

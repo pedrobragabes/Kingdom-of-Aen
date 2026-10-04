@@ -3,6 +3,17 @@ const previousFocus = new WeakMap();
 export function announce(message, regionId = "game-status") {
   const region = document.getElementById(regionId);
   if (region) region.textContent = message;
+  const feedback =
+    document.querySelector(
+      '[role="dialog"]:not(.hidden) [data-game-feedback]',
+    ) ||
+    [...document.querySelectorAll(".scene.active [data-game-feedback]")].find(
+      (element) => !element.closest('[role="dialog"]'),
+    );
+  if (feedback) {
+    feedback.textContent = message;
+    feedback.classList.toggle("is-error", regionId === "error-status");
+  }
 }
 
 export function openAccessibleDialog(dialog, initialFocus) {

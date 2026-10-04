@@ -19,6 +19,13 @@ export const ROW_ICONS = {
   agile: "img/icons/icon-ranged.png", // Agile usa ícone de ranged por padrão
 };
 
+export const ROW_LABELS = {
+  melee: "Corpo a corpo",
+  ranged: "À distância",
+  siege: "Cerco",
+  agile: "Qualquer fileira",
+};
+
 // ============================================
 // ===       DESCRIÇÕES DAS HABILIDADES    ===
 // ============================================
@@ -31,6 +38,12 @@ export const ABILITY_DESCRIPTIONS = {
   bond_partner: "Vínculo",
   hero: "Herói",
 };
+
+export function getCardDescription(card) {
+  if (card.ability === "bond_partner") return `Vínculo: ${card.partner}`;
+  if (card.ability === "hero") return ABILITY_DESCRIPTIONS.hero;
+  return ROW_LABELS[card.row === "all" ? "agile" : card.type] || "";
+}
 
 // ============================================
 // ===       FUNÇÕES UTILITÁRIAS           ===

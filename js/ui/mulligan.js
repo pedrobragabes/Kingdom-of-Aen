@@ -4,7 +4,7 @@ import {
   gameState,
   scheduleGameTask,
 } from "../core/state.js";
-import { ABILITY_DESCRIPTIONS } from "../utils/helpers.js";
+import { getCardDescription } from "../utils/helpers.js";
 import {
   announce,
   closeAccessibleDialog,
@@ -110,13 +110,7 @@ function createMulliganCardElement(card, index) {
   // Card description
   const descDiv = document.createElement("div");
   descDiv.classList.add("card-desc");
-  if (card.ability && card.ability !== "none") {
-    descDiv.textContent = ABILITY_DESCRIPTIONS[card.ability] || card.ability;
-  } else {
-    descDiv.textContent = card.type
-      ? card.type.charAt(0).toUpperCase() + card.type.slice(1)
-      : "";
-  }
+  descDiv.textContent = getCardDescription(card);
   infoContainer.appendChild(descDiv);
 
   el.appendChild(infoContainer);
@@ -127,6 +121,11 @@ function createMulliganCardElement(card, index) {
   // Disable if no redraws left
   if (gameState.mulliganRedraws <= 0) {
     el.classList.add("disabled");
+    el.disabled = true;
+    el.setAttribute(
+      "aria-label",
+      `${card.name}, ${card.power} pontos. Trocas esgotadas.`,
+    );
   }
 
   return el;
@@ -145,7 +144,7 @@ function redrawCard(index) {
 
   // Verificar se o deck tem cartas
   if (gameState.players.player.deck.length === 0) {
-    announce("O deck não possui cartas para troca.", "error-status");
+    announce("O baralho não possui cartas para troca.", "error-status");
     return;
   }
 
@@ -175,7 +174,17 @@ function redrawCard(index) {
       scheduleGameTask(() => {
         const newCardEl = createMulliganCardElement(newCardWithId, index);
         newCardEl.classList.add("swapped");
+        const swappedLabel = document.createElement("span");
+        swappedLabel.className = "swapped-label";
+        swappedLabel.textContent = "Trocada";
+        newCardEl.appendChild(swappedLabel);
+        newCardEl.setAttribute(
+          "aria-label",
+          `${newCardWithId.name}, ${newCardWithId.power} pontos. Carta trocada. ${gameState.mulliganRedraws > 0 ? "Pode trocar novamente." : "Trocas esgotadas."}`,
+        );
         cardEl.replaceWith(newCardEl);
+        if (gameState.mulliganRedraws > 0) newCardEl.focus();
+        else document.getElementById("mulligan-confirm-btn")?.focus();
       }, 250);
     }
   }
@@ -185,9 +194,13 @@ function redrawCard(index) {
     scheduleGameTask(() => {
       const allCards = container.querySelectorAll(".mulligan-card");
       allCards.forEach((card) => {
-        if (!card.classList.contains("swapped")) {
-          card.classList.add("disabled");
-        }
+        card.classList.add("disabled");
+        card.disabled = true;
+        if (!card.getAttribute("aria-label").includes("Trocas esgotadas"))
+          card.setAttribute(
+            "aria-label",
+            `${card.getAttribute("aria-label")}. Trocas esgotadas.`,
+          );
       });
     }, 300);
   }
