@@ -1,4 +1,3 @@
-.github
 .env
 .vscode
 node_modules
@@ -26,6 +25,8 @@ id_rsa
 id_rsa.pub
 secrets.json
 credentials.json
+test-results/
+playwright-report/
 
 # OS Files
 Thumbs.db

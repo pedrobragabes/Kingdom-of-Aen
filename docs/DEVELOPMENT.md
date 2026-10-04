@@ -1,6 +1,6 @@
 # Guia de Desenvolvimento
 
-Este projeto nao usa framework, bundler ou dependencias externas. A aplicacao usa ES Modules nativos, com imports e exports explicitos a partir de `js/main.js`.
+Este projeto nao usa framework, bundler ou dependencias externas em runtime. A aplicacao usa ES Modules nativos, com imports e exports explicitos a partir de `js/main.js`. Lint, formatter e testes usam ferramentas de desenvolvimento instaladas com `npm ci` em Node 24 ou posterior.
 
 ## Rodando Localmente
 
@@ -74,6 +74,8 @@ Antes de considerar uma alteracao pronta:
 - O botao de audio alterna mute sem quebrar a partida.
 
 ## Validacao Automatizada
+
+O fluxo completo de qualidade esta no README. `npm test` executa os testes do dominio e ciclo de vida; `npm run test:e2e` cobre builder, persistencia, mulligan, cartas por teclado, rodada, partida, reinicio e viewports compactos. Os relatorios Axe guardam todas as violacoes encontradas; apenas a ausencia de violacoes criticas e exigida neste corte. Isso nao equivale a certificacao WCAG nem encerra a revisao de contraste do issue #22.
 
 Rode o validador para conferir dados, referencias de assets e audios:
 

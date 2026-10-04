@@ -44,7 +44,8 @@ Abrir `index.html` diretamente por `file://` nao e suportado por causa das regra
 .
 |-- index.html
 |-- css/
-|   `-- style.css
+|   |-- style.css
+|   `-- responsive.css
 |-- js/
 |   |-- core/
 |   |-- data/
@@ -65,6 +66,23 @@ Abrir `index.html` diretamente por `file://` nao e suportado por causa das regra
 - [Assets](docs/ASSETS.md)
 - [Melhorias Recomendadas](docs/IMPROVEMENTS.md)
 - [Plano de Sprints](docs/SPRINTS.md)
+- [Validacao da integracao em outubro de 2026](docs/VALIDACAO-2026-10-04.md)
+
+## Verificacoes
+
+As ferramentas de desenvolvimento usam Node 24 ou posterior; o jogo continua sem dependencias em runtime e sem build.
+
+```powershell
+npm ci
+npm run lint
+npm run format:check
+npm run validate
+npm test
+npx playwright install chromium
+npm run test:e2e
+```
+
+Os testes de navegador iniciam automaticamente um servidor restrito a arquivos do jogo em loopback. O CI executa esses comandos e publica coverage, screenshots, traces de falhas e resultados Axe. A protecao da main exige os checks `validate` e `gitleaks`.
 
 ## Observacoes Importantes
 

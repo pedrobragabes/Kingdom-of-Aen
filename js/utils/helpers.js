@@ -13,10 +13,10 @@
  * @constant {Object.<string, string>}
  */
 export const ROW_ICONS = {
-    melee: 'img/icons/icon-melee.png',
-    ranged: 'img/icons/icon-ranged.png',
-    siege: 'img/icons/icon-siege.png',
-    agile: 'img/icons/icon-ranged.png' // Agile usa ícone de ranged por padrão
+  melee: "img/icons/icon-melee.png",
+  ranged: "img/icons/icon-ranged.png",
+  siege: "img/icons/icon-siege.png",
+  agile: "img/icons/icon-ranged.png", // Agile usa ícone de ranged por padrão
 };
 
 // ============================================
@@ -28,8 +28,8 @@ export const ROW_ICONS = {
  * @constant {Object.<string, string>}
  */
 export const ABILITY_DESCRIPTIONS = {
-    bond_partner: 'Vínculo',
-    hero: 'Herói'
+  bond_partner: "Vínculo",
+  hero: "Herói",
 };
 
 // ============================================
@@ -45,10 +45,10 @@ export const ABILITY_DESCRIPTIONS = {
  * const shuffled = shuffleArray(deck);
  */
 export function shuffleArray(array) {
-    const shuffled = [...array];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    return shuffled;
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
 }
