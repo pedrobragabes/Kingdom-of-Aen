@@ -12,11 +12,11 @@
  * Mapeamento de tipos de fileira para seus ícones
  * @constant {Object.<string, string>}
  */
-const ROW_ICONS = {
-    melee: 'img/icons/icon-melee.png',
-    ranged: 'img/icons/icon-ranged.png',
-    siege: 'img/icons/icon-siege.png',
-    agile: 'img/icons/icon-ranged.png' // Agile usa ícone de ranged por padrão
+export const ROW_ICONS = {
+  melee: "img/icons/icon-melee.png",
+  ranged: "img/icons/icon-ranged.png",
+  siege: "img/icons/icon-siege.png",
+  agile: "img/icons/icon-ranged.png", // Agile usa ícone de ranged por padrão
 };
 
 // ============================================
@@ -27,19 +27,9 @@ const ROW_ICONS = {
  * Descrições legíveis das habilidades das cartas
  * @constant {Object.<string, string>}
  */
-const ABILITY_DESCRIPTIONS = {
-    spy: 'Espião',
-    spy_medic: 'Espião Médico',
-    medic: 'Médico',
-    bond_partner: 'Vínculo',
-    tight_bond: 'Vínculo Forte',
-    decoy: 'Espantalho',
-    scorch: 'Queimar',
-    hero: 'Herói',
-    weather_frost: 'Geada',
-    weather_fog: 'Névoa',
-    weather_rain: 'Chuva',
-    weather_clear: 'Limpar Clima'
+export const ABILITY_DESCRIPTIONS = {
+  bond_partner: "Vínculo",
+  hero: "Herói",
 };
 
 // ============================================
@@ -54,17 +44,11 @@ const ABILITY_DESCRIPTIONS = {
  * const deck = [1, 2, 3, 4, 5];
  * const shuffled = shuffleArray(deck);
  */
-function shuffleArray(array) {
-    const shuffled = [...array];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    return shuffled;
+export function shuffleArray(array) {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
 }
-
-// ============================================
-// ===       EXPORTS (Futuros ES6 Modules) ===
-// ============================================
-// Quando migrar para ES6 Modules, descomentar:
-// export { ROW_ICONS, ABILITY_DESCRIPTIONS, shuffleArray };

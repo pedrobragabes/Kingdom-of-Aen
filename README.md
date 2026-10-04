@@ -1,96 +1,98 @@
 # Kingdom of Aen
 
-Kingdom of Aen e um jogo de cartas tatico de navegador, inspirado em Gwent (The Witcher 3). O jogador monta um deck no Deck Builder e disputa partidas em melhor de 3 rodadas, jogando cartas em fileiras de melee, ranged e siege, com habilidades, lideres e clima.
+Kingdom of Aen e um jogo de cartas tatico inspirado em duelos por fileiras, com deck builder, mulligan, vinculos entre cartas e uma IA simples para o oponente.
 
-O projeto e uma aplicacao web estatica feita com HTML, CSS e JavaScript puro, sem etapa de build, bundler ou framework no estado atual.
+O projeto e uma aplicacao web estatica feita com HTML, CSS e JavaScript puro em ES Modules. Nao ha etapa de build, bundler ou framework.
 
-## Estado Atual (snapshot)
+## Estado Atual
 
-- Single-player (Jogador vs IA local) totalmente jogavel.
-- Deck builder com filtros, estatisticas e persistencia em `localStorage`.
-- Colecao com 43 cartas (39 unidades + 4 especiais) e 4 lideres com habilidades distintas.
-- Tabuleiro com fileiras `melee`, `ranged` e `siege`, alem de cartas agile (`row: "all"`).
-- Sistema de mulligan (ate 2 trocas iniciais), melhor de 3 rodadas, gemas de vitoria, modal de fim de jogo.
-- IA do oponente baseada em prioridades: passa, usa lider, joga combos, medicos, espioes, espantalhos e cartas climaticas.
-- Audio de fundo e efeitos sonoros locais com mute persistido.
-- Validador automatico de dados e assets em `scripts/validate-project.js`.
-
-> **Importante:** o modo **online (multiplayer real)** ainda **nao existe** no codigo. Hoje so e possivel jogar localmente contra a IA. Veja [docs/ROADMAP.md](docs/ROADMAP.md) e [docs/MULTIPLAYER.md](docs/MULTIPLAYER.md) para o plano de evolucao.
+- Deck builder com persistencia em `localStorage`.
+- Colecao com 39 unidades.
+- Partida em melhor de 3 rodadas.
+- Tabuleiro com fileiras `melee`, `ranged` e `siege`.
+- IA baseada em prioridades para passar, administrar cartas e completar vinculos de parceiros.
+- Audio de fundo e efeitos sonoros locais.
 
 ## Como Rodar
 
-Opcao simples (abrir o HTML direto):
-
-```powershell
-Start-Process .\index.html
-```
-
-Opcao recomendada (servidor local, evita problemas de file://):
+Sirva o diretorio por HTTP para que o navegador carregue os modulos:
 
 ```powershell
 python -m http.server 8080
 ```
 
-Depois acesse:
+Depois abra:
 
 ```text
 http://localhost:8080
 ```
 
+Abrir `index.html` diretamente por `file://` nao e suportado por causa das regras de carregamento de ES Modules do navegador.
+
 ## Como Jogar
 
-1. Monte um deck no Deck Builder.
-2. O deck precisa ter pelo menos 22 unidades e no maximo 10 especiais.
-3. Inicie a batalha. O sistema embaralha o deck e compra 10 cartas para cada lado.
-4. No mulligan, troque ate 2 cartas iniciais.
-5. Jogue cartas nas fileiras corretas (melee, ranged, siege ou agile) ou passe a rodada.
-6. Vence a rodada quem tiver a maior pontuacao total no tabuleiro.
-7. Vence a partida quem ganhar 2 rodadas (melhor de 3).
+1. Monte um deck no deck builder.
+2. O deck precisa ter pelo menos 22 unidades.
+3. Inicie a batalha e troque ate 2 cartas no mulligan.
+4. Jogue cartas nas fileiras corretas ou passe a rodada.
+5. Vence a rodada quem tiver a maior pontuacao total no tabuleiro.
+6. Vence a partida quem ganhar 2 rodadas.
 
 ## Estrutura
 
 ```text
 .
-|-- index.html          # Cenas: Deck Builder + Tabuleiro
+|-- index.html
 |-- css/
-|   `-- style.css       # Layout, cartas, animacoes, modais
+|   |-- style.css
+|   `-- responsive.css
 |-- js/
-|   |-- core/           # Estado, audio, habilidades, lideres, IA, engine
-|   |-- data/           # Cartas e lideres (CARD_COLLECTION, leaderCardsData)
-|   |-- ui/             # Render, drag-and-drop, mulligan
-|   |-- utils/          # Helpers globais
-|   |-- deckbuilder.js  # Deck Builder + persistencia
-|   `-- main.js         # Inicializacao
+|   |-- core/
+|   |-- data/
+|   |-- ui/
+|   |-- utils/
+|   |-- deckbuilder.js
+|   `-- main.js
 |-- img/
-|   |-- icons/          # Icones de fileira
-|   `-- personagens/    # Artes de cartas
-|-- audio/              # Musica e SFX
-|-- scripts/
-|   `-- validate-project.js
+|-- audio/
 `-- docs/
 ```
 
 ## Documentacao
 
-Documentacao tecnica e de produto em `docs/`:
+- [Arquitetura](docs/ARCHITECTURE.md)
+- [Regras e Sistemas](docs/GAME_RULES.md)
+- [Guia de Desenvolvimento](docs/DEVELOPMENT.md)
+- [Assets](docs/ASSETS.md)
+- [Melhorias Recomendadas](docs/IMPROVEMENTS.md)
+- [Plano de Sprints](docs/SPRINTS.md)
+- [Validacao da integracao em outubro de 2026](docs/VALIDACAO-2026-10-04.md)
 
-- **Visao do Produto**
-  - [Escopo](docs/SCOPE.md) - o que e e o que nao e o jogo, MVP, fora de escopo
-  - [Roadmap / Destino Final](docs/ROADMAP.md) - visao 1.0, marcos e ordem de prioridades
-  - [Plano Multiplayer Online](docs/MULTIPLAYER.md) - arquitetura proposta para PvP online
-- **Engenharia**
-  - [Arquitetura](docs/ARCHITECTURE.md) - modulos, ordem de scripts, contratos de dados
-  - [Regras e Sistemas](docs/GAME_RULES.md) - regras implementadas hoje no motor
-  - [Guia de Desenvolvimento](docs/DEVELOPMENT.md) - como adicionar carta, habilidade, debug
-  - [Assets](docs/ASSETS.md) - imagens, audios, lacunas
-  - [Melhorias Recomendadas](docs/IMPROVEMENTS.md) - debito tecnico priorizado
-  - [Plano de Sprints](docs/SPRINTS.md) - sprints curtos derivados das melhorias
+## Verificacoes
+
+As ferramentas de desenvolvimento usam Node 24 ou posterior; o jogo continua sem dependencias em runtime e sem build.
+
+```powershell
+npm ci
+npm run lint
+npm run format:check
+npm run validate
+npm test
+npx playwright install chromium
+npm run test:e2e
+```
+
+Os testes de navegador iniciam automaticamente um servidor restrito a arquivos do jogo em loopback. O CI executa esses comandos e publica coverage, screenshots, traces de falhas e resultados Axe. A protecao da main exige os checks `validate` e `gitleaks`.
 
 ## Observacoes Importantes
 
-- Algumas cartas e todos os lideres apontam para `assets/*.png`, mas essa pasta nao existe. O jogo continua funcionando com o visual de fallback (sem arte real). Lista completa em [Assets](docs/ASSETS.md).
-- Algumas habilidades ja estao implementadas no motor (`weather_*`, `scorch`, `spy`, `tight_bond`), mas ainda nao existem cartas usando-as na colecao atual. Detalhes em [Regras e Sistemas](docs/GAME_RULES.md).
-- O modo online ainda e um plano. Hoje so existe single-player vs IA. Veja [docs/MULTIPLAYER.md](docs/MULTIPLAYER.md).
+Cartas sem arte cadastrada usam o visual de fallback do proprio componente. Nenhum caminho de imagem inexistente deve ser mantido nos dados; as convencoes e a lista de artes disponiveis estao em [Assets](docs/ASSETS.md).
+
+O MVP mantem apenas as habilidades `bond_partner` e `hero`. Novas mecanicas devem entrar acompanhadas de cartas alcancaveis, regras documentadas e testes.
+
+## Limites e planos
+
+O modo atual e single-player contra a IA local. Multiplayer ainda exige backend, protocolo e aceitacao separados; os documentos [Escopo](docs/SCOPE.md), [Roadmap](docs/ROADMAP.md) e [Multiplayer](docs/MULTIPLAYER.md) preservam essa visao futura. A lista antiga de sprints e melhorias e historica e deve ser lida junto da validacao atual.
 
 ## Autoria
 

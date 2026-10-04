@@ -1,0 +1,262 @@
+.collection-grid,
+.deck-grid {
+  grid-auto-rows: max-content;
+  align-items: start;
+}
+
+.controls-area {
+  height: 250px;
+  min-height: 250px;
+}
+
+.hand-cards {
+  padding: 12px 4px 10px;
+}
+
+.cards-container .card {
+  height: min(130px, 100%);
+}
+
+.opponent-hand-info {
+  right: 56px;
+}
+
+@media (max-width: 1024px) {
+  .builder-main {
+    padding: 12px;
+    gap: 12px;
+  }
+  .builder-deck {
+    min-width: 240px;
+  }
+  .builder-section-header {
+    padding: 12px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .builder-footer {
+    padding: 12px;
+    gap: 12px;
+  }
+  .deck-stats {
+    gap: 16px;
+  }
+}
+
+@media (max-width: 768px), (max-height: 600px) {
+  body {
+    height: auto;
+    min-height: 100svh;
+    overflow: auto;
+  }
+  .scene.active {
+    height: auto;
+    overflow: visible;
+  }
+  .builder-container {
+    height: auto;
+    min-height: 100svh;
+    overflow: visible;
+  }
+  .builder-header {
+    padding: 12px;
+  }
+  .builder-title {
+    font-size: 1.8rem;
+  }
+  .builder-main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    overflow: visible;
+    flex: none;
+  }
+  .builder-collection,
+  .builder-deck {
+    min-width: 0;
+    width: 100%;
+  }
+  .collection-grid {
+    min-height: 260px;
+    max-height: 48svh;
+  }
+  .deck-grid {
+    min-height: 100px;
+    max-height: 30svh;
+  }
+  .builder-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    flex-direction: column;
+    align-items: stretch;
+    background: #10101b;
+  }
+  .deck-stats {
+    justify-content: space-around;
+  }
+  .builder-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .play-btn {
+    width: 100%;
+  }
+  .game-container,
+  .main-board {
+    height: auto;
+    min-height: 100svh;
+    overflow: visible;
+  }
+  .opponent-hand-info {
+    position: static;
+    align-self: flex-end;
+    margin: 4px;
+    font-size: 0.75rem;
+  }
+  .opponent-side,
+  .player-side {
+    flex: none;
+    padding: 6px;
+    min-height: 252px;
+  }
+  .row {
+    min-height: 78px;
+    padding: 4px;
+  }
+  .row-label {
+    width: 58px;
+    flex-shrink: 0;
+    font-size: 0.6rem;
+  }
+  .row-score {
+    width: 32px;
+    flex-shrink: 0;
+    font-size: 0.9rem;
+  }
+  .cards-container {
+    min-width: 0;
+    overflow-x: auto;
+  }
+  .cards-container .card {
+    width: 52px;
+    min-width: 52px;
+    height: 72px;
+    margin-right: 4px;
+  }
+  .cards-container .card:hover {
+    transform: none;
+    margin-left: 0;
+  }
+  .cards-container .card-name {
+    font-size: 0.5rem;
+  }
+  .controls-area {
+    height: auto;
+    min-height: 0;
+    flex-direction: column;
+    padding: 6px;
+  }
+  .player-hand {
+    flex: none;
+    width: 100%;
+    border-right: 0;
+    padding: 6px;
+  }
+  .hand-cards {
+    min-height: 132px;
+    max-width: 100%;
+  }
+  .hand-cards .card {
+    width: 80px;
+    min-width: 80px;
+    height: 112px;
+  }
+  .scoreboard {
+    width: 100%;
+    min-width: 0;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 8px;
+    align-items: center;
+  }
+  .pass-btn {
+    width: 100%;
+    margin-top: 0;
+  }
+  .mulligan-content {
+    display: flex;
+    flex-direction: column;
+    max-height: 92svh;
+    overflow: hidden;
+    padding: 12px;
+  }
+  .mulligan-header {
+    margin-bottom: 8px;
+  }
+  .mulligan-title {
+    font-size: 1.4rem;
+  }
+  .mulligan-cards {
+    gap: 8px;
+    padding: 8px;
+    max-height: 45svh;
+    overflow-y: auto;
+    min-height: 0;
+  }
+  .mulligan-card {
+    width: 72px;
+    height: 104px;
+    flex-shrink: 0;
+  }
+  .mulligan-card .card-name {
+    font-size: 0.55rem;
+  }
+  .mulligan-confirm-btn {
+    flex-shrink: 0;
+    margin-top: 8px;
+  }
+  .modal-content {
+    max-width: calc(100vw - 24px);
+    max-height: 92svh;
+    overflow-y: auto;
+    padding: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .builder-title {
+    font-size: 1.5rem;
+    letter-spacing: 1px;
+  }
+  .builder-subtitle {
+    font-size: 0.8rem;
+  }
+  .builder-section-header h2 {
+    font-size: 0.9rem;
+  }
+  .filter-buttons {
+    flex-wrap: wrap;
+  }
+  .collection-grid {
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  }
+  .deck-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+  .stat-requirement {
+    font-size: 0.65rem;
+  }
+  .modal-title {
+    font-size: 2rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
